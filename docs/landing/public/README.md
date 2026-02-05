@@ -2,8 +2,4 @@
 
 # For the General Public
 
-Fair and transparent coordination.
-
----
-
 ← [Back to Landing Hub](../index.md)

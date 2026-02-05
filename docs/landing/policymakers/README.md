@@ -2,8 +2,4 @@
 
 # For Policymakers
 
-CAN improves allocation accuracy and legitimacy.
-
----
-
 ← [Back to Landing Hub](../index.md)

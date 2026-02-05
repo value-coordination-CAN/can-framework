@@ -2,8 +2,4 @@
 
 # For Universities & Researchers
 
-Research and evaluation platform.
-
----
-
 ← [Back to Landing Hub](../index.md)

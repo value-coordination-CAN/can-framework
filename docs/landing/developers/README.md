@@ -2,8 +2,4 @@
 
 # For Developers & Builders
 
-Build on CAN infrastructure.
-
----
-
 ← [Back to Landing Hub](../index.md)

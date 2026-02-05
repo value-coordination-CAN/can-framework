@@ -5,7 +5,8 @@ Contribution–Access Network (CAN) improves allocative accuracy, social resilie
 CAN operates as a parallel coordination layer using CBDC and DPI as regulated bridges toward direct value handling.
 
 ## Start Here
-- For Policymakers
-- Pilots & Evaluation
-- Architecture Overview
-- Safeguards & Governance
+
+- [For Policymakers](policymakers/README.md)
+- [Pilots & Evaluation](pilots/README.md)
+- [Architecture Overview](architecture/README.md)
+- [Safeguards & Governance](safeguards/README.md)

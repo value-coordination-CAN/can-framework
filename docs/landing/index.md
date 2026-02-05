@@ -1,10 +1,8 @@
-[Home](../index.md) › Policy & Public Landing
+[Home](../index.md) › Policy & Public Portal
 
-# CAN — Policy & Public Landing
+# CAN — Policy & Public Portal
 
-Contribution–Access Network (CAN) is an open coordination framework.
-
-## Choose Your Path
+Choose your entry point:
 
 - [For Policymakers](policymakers/README.md)
 - [For Regulators & Supervisors](regulators/README.md)

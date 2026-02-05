@@ -1,5 +1,8 @@
-[Home](../../index.md) › [Policy & Public Landing](../index.md) › Regulators
+[Home](../../index.md) › [Policy & Public Portal](../index.md) › Regulators
 
 # For Regulators & Supervisors
 
-← [Back to Landing Hub](../index.md)
+Start here:
+- [Regulators quick-start](../../about/FOR_REGULATORS.md)
+
+← [Back to Portal](../index.md)

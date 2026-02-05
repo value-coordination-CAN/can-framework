@@ -2,15 +2,20 @@
 
 **Open Coordination Infrastructure**
 
-CAN is an open framework for allocating access to shared resources using verified **contribution**, **reliability**, and **care** signals.
+CAN allocates access to shared resources using verified **contribution**, **reliability**, and **care** signals.
 
 It operates as a parallel coordination layer that complements monetary systems and digital public infrastructure.
 
 ---
 
-## Access Portals
+## Start here
 
-- 🏛️ [Policy & Public Landing](landing/index.md)
+- 🏛️ **[Policy & Public Portal](landing/index.md)**
+
+---
+
+## Key documents
+
 - 📄 [Policy Overview](about/POLICY_ABOUT.md)
 - ⚖️ [For Regulators](about/FOR_REGULATORS.md)
 - 🎓 [For Universities & Research](about/FOR_UNIVERSITIES_AND_RESEARCH.md)
@@ -18,22 +23,12 @@ It operates as a parallel coordination layer that complements monetary systems a
 
 ---
 
-## Reference Implementation
+## Reference implementation
 
-- 🔧 [Backend Documentation](../backend/README.md)
+- 🔧 [Backend Documentation (GitHub)](https://github.com/value-coordination-CAN/can-framework/blob/main/backend/README.md)
 
 ---
 
 ## Repository
 
 - GitHub: https://github.com/value-coordination-CAN/can-framework
-
----
-
-## Principles
-
-- Transparency
-- Contestability
-- Human Oversight
-- Privacy by Design
-- Institutional Accountability

@@ -1,5 +1,8 @@
-[Home](../../index.md) › [Policy & Public Landing](../index.md) › Public
+[Home](../../index.md) › [Policy & Public Portal](../index.md) › Public
 
 # For the General Public
 
-← [Back to Landing Hub](../index.md)
+Start here:
+- [Policy Overview](../../about/POLICY_ABOUT.md)
+
+← [Back to Portal](../index.md)

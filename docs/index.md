@@ -1,14 +1,11 @@
-# Contribution–Access Network (CAN)
+# CAN — Policy Landing
 
-**Repo:** https://github.com/value-coordination-CAN/can-framework  
-**Docs:** https://value-coordination-CAN.github.io/can-framework/
+Contribution–Access Network (CAN) improves allocative accuracy, social resilience, and institutional legitimacy.
 
-CAN allocates access to shared resources using verified **contribution**, **reliability**, and **care** signals.
+CAN operates as a parallel coordination layer using CBDC and DPI as regulated bridges toward direct value handling.
 
-Start with:
-- `about/POLICY_ABOUT.md`
-- `about/FOR_REGULATORS.md`
-- `about/FOR_UNIVERSITIES_AND_RESEARCH.md`
-- `about/FOR_DEVELOPERS.md`
-
-Reference backend: `backend/README.md`
+## Start Here
+- For Policymakers
+- Pilots & Evaluation
+- Architecture Overview
+- Safeguards & Governance

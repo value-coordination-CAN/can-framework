@@ -1,10 +1,9 @@
-# For Policymakers (ECB/BIS)
+[Home](../../index.md) › [Policy & Public Landing](../index.md) › Policymakers
 
-CAN is a parallel coordination layer improving allocation via contribution, reliability, and care.
+# For Policymakers
 
-## Key Objectives
-- Inclusion
-- Efficiency
-- Trust
-- Resilience
-- Legitimacy
+CAN improves allocation accuracy and legitimacy.
+
+---
+
+← [Back to Landing Hub](../index.md)

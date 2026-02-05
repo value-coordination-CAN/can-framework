@@ -10,10 +10,13 @@ It operates as a parallel coordination layer that complements monetary systems a
 
 ## Core Documents
 
+These documents define CAN’s governance, safeguards, technical architecture, and institutional responsibilities.
+
 ├─ 📄 [Policy Overview](about/POLICY_ABOUT.md)  
 ├─ ⚖️ [For Regulators](about/FOR_REGULATORS.md)  
 ├─ 🎓 [For Universities & Research](about/FOR_UNIVERSITIES_AND_RESEARCH.md)  
 ├─ 💻 [For Developers](about/FOR_DEVELOPERS.md)  
+├─ 📜 [Integration Policy](integrations/INTEGRATION_POLICY.md)  
 └─ 🔧 [Backend Documentation (GitHub)](https://github.com/value-coordination-CAN/can-framework/blob/main/backend/README.md)
 
 ---
@@ -31,8 +34,6 @@ It operates as a parallel coordination layer that complements monetary systems a
 ### Technical Notes
 - 🧩 Identity, DID, and OIDC Integration
 - 🧩 Allocation Engine Design
-
-> Submissions and proposals via GitHub Issues.
 
 ---
 

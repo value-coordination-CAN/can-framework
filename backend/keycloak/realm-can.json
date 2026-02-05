@@ -1,0 +1,65 @@
+{
+  "realm": "can",
+  "enabled": true,
+  "displayName": "CAN Realm",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "sslRequired": "none",
+  "clients": [
+    {
+      "clientId": "can-api",
+      "name": "CAN API",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "dev-secret-change-me",
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "protocol": "openid-connect",
+      "redirectUris": [
+        "*"
+      ],
+      "webOrigins": [
+        "*"
+      ],
+      "attributes": {
+        "access.token.signed.response.alg": "RS256"
+      }
+    }
+  ],
+  "roles": {
+    "realm": [
+      {
+        "name": "can_user",
+        "description": "Basic CAN access"
+      },
+      {
+        "name": "can_admin",
+        "description": "Admin access"
+      },
+      {
+        "name": "can_auditor",
+        "description": "Audit access"
+      }
+    ]
+  },
+  "users": [
+    {
+      "username": "testuser",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "testuser@example.org",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "testpass",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "can_user"
+      ]
+    }
+  ]
+}

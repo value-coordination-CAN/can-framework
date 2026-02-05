@@ -1,0 +1,12 @@
+.env
+__pycache__/
+*.pyc
+.venv/
+.vscode/
+.idea/
+node_modules/
+secrets/
+*.pem
+*.key
+Thumbs.db
+.DS_Store

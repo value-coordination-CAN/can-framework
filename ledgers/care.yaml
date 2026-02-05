@@ -1,0 +1,13 @@
+care:
+  factors:
+    - health
+    - parenting
+    - burnout
+    - age
+    - crisis
+  weighting:
+    health: 0.3
+    parenting: 0.2
+    burnout: 0.2
+    age: 0.1
+    crisis: 0.2

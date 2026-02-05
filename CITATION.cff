@@ -1,0 +1,25 @@
+cff-version: 1.2.0
+title: "Contribution–Access Network (CAN)"
+message: "If you use this work, please cite it."
+type: software
+authors:
+  - family-names: "Nikolov"
+    given-names: "Alex"
+date-released: 2026-02-05
+version: "0.1.0"
+license: "MIT"
+repository-code: "https://github.com/value-coordination-CAN/can-framework"
+abstract: >
+  The Contribution–Access Network (CAN) is an open framework for allocating access to shared resources
+  using verified contribution, reliability, and care signals as a complementary coordination layer to
+  monetary systems. It is designed for pilots, evaluation, and institutional integration, including
+  CBDC and digital identity infrastructures.
+preferred-citation:
+  type: software
+  authors:
+    - family-names: "Nikolov"
+      given-names: "Alex"
+  title: "Contribution–Access Network (CAN)"
+  year: 2026
+  version: "0.1.0"
+  url: "https://github.com/value-coordination-CAN/can-framework"

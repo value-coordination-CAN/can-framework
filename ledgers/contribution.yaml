@@ -1,0 +1,11 @@
+contribution:
+  metrics:
+    - peer_validation
+    - usage_impact
+    - time_commitment
+    - outcome_quality
+  weighting:
+    peer_validation: 0.3
+    usage_impact: 0.3
+    time_commitment: 0.2
+    outcome_quality: 0.2

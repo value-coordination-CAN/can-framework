@@ -1,0 +1,11 @@
+reliability:
+  metrics:
+    - attendance
+    - completion_rate
+    - responsiveness
+    - compliance
+  weighting:
+    attendance: 0.25
+    completion_rate: 0.35
+    responsiveness: 0.2
+    compliance: 0.2

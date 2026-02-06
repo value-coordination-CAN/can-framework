@@ -23,17 +23,7 @@ These documents define CAN’s governance, safeguards, technical architecture, a
 
 ## Publications / Briefings / Working Papers
 
-### Policy Briefs
-- 📑 CAN and CBDC as Coordination Infrastructure (forthcoming)
-- 📑 Direct Value Handling in Networked Economies (forthcoming)
-
-### Working Papers
-- 📘 Contribution–Access Networks: A Socio-Technical Analysis
-- 📘 Post-Monetary Allocation Mechanisms
-
-### Technical Notes
-- 🧩 Identity, DID, and OIDC Integration
-- 🧩 Allocation Engine Design
+- 📘 [WP-001: From Six Degrees of Separation to Direct Value Exchange](publications/wp-001-network-value.md)
 
 ---
 

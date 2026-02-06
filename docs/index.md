@@ -33,6 +33,10 @@ These documents define CAN’s governance, safeguards, technical architecture, a
 
 ---
 
+## Integrations & Platforms
+- 🔗 [Integrations Overview](integrations/index.md)
+- 🔗 [LinkedIn (Consent Import)](integrations/linkedin/README.md)
+
 ## Principles
 
 - Transparency  

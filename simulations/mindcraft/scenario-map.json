@@ -1,0 +1,44 @@
+{
+  "contribution": {
+    "block_place": {
+      "metric": "maintenance.build",
+      "value": 1.0
+    },
+    "item_craft": {
+      "metric": "production.craft",
+      "value": 1.0
+    },
+    "deliver_to_chest": {
+      "metric": "logistics.delivery",
+      "value": 2.0
+    },
+    "repair_structure": {
+      "metric": "maintenance.repair",
+      "value": 3.0
+    }
+  },
+  "reliability": {
+    "quest_start": {
+      "metric": "attendance.start",
+      "value": 1.0
+    },
+    "quest_complete": {
+      "metric": "completion.finish",
+      "value": 3.0
+    },
+    "disconnect": {
+      "metric": "availability.disconnect",
+      "value": 0.0
+    }
+  },
+  "care": {
+    "injury_event": {
+      "metric": "health.injury",
+      "value": 1.0
+    },
+    "caregiving_load": {
+      "metric": "caregiving.load",
+      "value": 1.0
+    }
+  }
+}

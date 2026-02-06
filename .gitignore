@@ -10,3 +10,5 @@ secrets/
 *.key
 Thumbs.db
 .DS_Store
+# Mindcraft adapter secrets
+simulations/mindcraft/adapter/.env

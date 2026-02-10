@@ -25,6 +25,7 @@ These documents define CAN’s governance, safeguards, technical architecture, a
 
 - 📘 [WP-001: From Six Degrees of Separation to Direct Value Exchange](publications/wp-001-network-value/)
 - 📙 [WP-002: Practical Post-Money Resource Allocation for Real Humans](publications/wp-002-practical-post-money-allocation/)
+- 📘 [WP-003: Gaming as a Civilisational Testbed for Post-Monetary Coordination](publications/wp-003-gaming-coordination.md)
 
 ---
 

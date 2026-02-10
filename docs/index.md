@@ -23,8 +23,8 @@ These documents define CAN’s governance, safeguards, technical architecture, a
 
 ## Publications / Briefings / Working Papers
 
-- 📘 [WP-001: From Six Degrees of Separation to Direct Value Exchange](publications/wp-001-network-value/)
-- 📙 [WP-002: Practical Post-Money Resource Allocation for Real Humans](publications/wp-002-practical-post-money-allocation/)
+- 📘 [WP-001: From Six Degrees of Separation to Direct Value Exchange](publications/wp-001-network-value)
+- 📙 [WP-002: Practical Post-Money Resource Allocation for Real Humans](publications/wp-002-practical-post-money-allocation)
 
 ---
 
@@ -37,6 +37,7 @@ These documents define CAN’s governance, safeguards, technical architecture, a
 ## Integrations & Platforms
 - 🔗 [Integrations Overview](integrations/index.md)
 - 🔗 [LinkedIn (Consent Import)](https://github.com/value-coordination-CAN/can-framework/blob/main/backend/README_LINKEDIN_INTEGRATION.md)
+
 
 ## Principles
 

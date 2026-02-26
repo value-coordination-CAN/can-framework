@@ -6,12 +6,15 @@ repo_name: can-framework
 repo_url: https://github.com/value-coordination-CAN/can-framework
 
 docs_dir: docs
+use_directory_urls: true
 
 nav:
   - Home: index.md
   - Publications:
       - WP-001: publications/wp-001-network-value.md
       - WP-002: publications/wp-002-practical-post-money-allocation.md
+      - WP-003: publications/wp-003-gaming-coordination.md
+      - WP-004: publications/wp-004-moving-beyond-money.md
       - WP-005: publications/wp-005-six-degree-network-ledger.md
       - WP-006: publications/wp-006-operationalising-graph-settlement.md
   - Policy:

@@ -21,11 +21,11 @@ nav:
       - Overview: about/POLICY_ABOUT.md
       - Regulators: about/FOR_REGULATORS.md
       - Universities: about/FOR_UNIVERSITIES_AND_RESEARCH.md
-  - Developers: about/FOR_DEVELOPERS.md
+      - Developers: about/FOR_DEVELOPERS.md
   - Integrations:
       - Overview: integrations/index.md
       - Integration Policy: integrations/INTEGRATION_POLICY.md
-  - Backend: https://github.com/value-coordination-CAN/can-framework/blob/main/backend/README.md
+      - Backend: https://github.com/value-coordination-CAN/can-framework/blob/main/backend/README.md
   - Governance:
       - Governance: https://github.com/value-coordination-CAN/can-framework/blob/main/GOVERNANCE.md
       - Contributing: https://github.com/value-coordination-CAN/can-framework/blob/main/CONTRIBUTING.md

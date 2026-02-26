@@ -1,0 +1,727 @@
+diff --git a/mkdocs.yml b/mkdocs.yml
+index 3b6c7f1..c9a8b44 100644
+--- a/mkdocs.yml
++++ b/mkdocs.yml
+@@ -1 +1,45 @@
+-site_name: Contribution–Access Network (CAN) site_description: Open coordination infrastructure for post-monetary systems site_url: https://value-coordination-can.github.io/can-framework/ repo_name: can-framework repo_url: https://github.com/value-coordination-CAN/can-framework docs_dir: docs nav: - Home: index.md - Publications: - WP-001: publications/wp-001-network-value.md - WP-002: publications/wp-002-practical-post-money-allocation.md - Policy: - Overview: about/POLICY_ABOUT.md - Regulators: about/FOR_REGULATORS.md - Universities: about/FOR_UNIVERSITIES_AND_RESEARCH.md - Developers: about/FOR_DEVELOPERS.md - Integrations: - Overview: integrations/index.md - Integration Policy: integrations/INTEGRATION_POLICY.md - Backend: https://github.com/value-coordination-CAN/can-framework/blob/main/backend/README.md - Governance: - Governance: https://github.com/value-coordination-CAN/can-framework/blob/main/GOVERNANCE.md - Contributing: https://github.com/value-coordination-CAN/can-framework/blob/main/CONTRIBUTING.md - Security: https://github.com/value-coordination-CAN/can-framework/blob/main/SECURITY.md - Releases: https://github.com/value-coordination-CAN/can-framework/blob/main/RELEASE.md markdown_extensions: - toc: permalink: true - tables - admonition plugins: - search theme: name: material
++site_name: Contribution–Access Network (CAN)
++site_description: Open coordination infrastructure for post-monetary systems
++site_url: https://value-coordination-can.github.io/can-framework/
++
++repo_name: can-framework
++repo_url: https://github.com/value-coordination-CAN/can-framework
++
++docs_dir: docs
++
++nav:
++  - Home: index.md
++  - Publications:
++      - WP-001: publications/wp-001-network-value.md
++      - WP-002: publications/wp-002-practical-post-money-allocation.md
++      - WP-003: publications/wp-003-gaming-coordination.md
++      - WP-004: publications/wp-004-moving-beyond-money.md
++      - WP-005: publications/wp-005-six-degree-network-ledger.md
++      - WP-006: publications/wp-006-operationalising-graph-settlement.md
++  - Policy:
++      - Overview: about/POLICY_ABOUT.md
++      - Regulators: about/FOR_REGULATORS.md
++      - Universities: about/FOR_UNIVERSITIES_AND_RESEARCH.md
++      - Developers: about/FOR_DEVELOPERS.md
++  - Integrations:
++      - Overview: integrations/index.md
++      - Integration Policy: integrations/INTEGRATION_POLICY.md
++      - Backend: https://github.com/value-coordination-CAN/can-framework/blob/main/backend/README.md
++  - Governance:
++      - Governance: https://github.com/value-coordination-CAN/can-framework/blob/main/GOVERNANCE.md
++      - Contributing: https://github.com/value-coordination-CAN/can-framework/blob/main/CONTRIBUTING.md
++      - Security: https://github.com/value-coordination-CAN/can-framework/blob/main/SECURITY.md
++      - Releases: https://github.com/value-coordination-CAN/can-framework/blob/main/RELEASE.md
++
++markdown_extensions:
++  - toc:
++      permalink: true
++  - tables
++  - admonition
++
++plugins:
++  - search
++
++theme:
++  name: material
+diff --git a/docs/index.md b/docs/index.md
+index 3a6d0c2..7b53b9a 100644
+--- a/docs/index.md
++++ b/docs/index.md
+@@ -1,2 +1,2 @@
+ # Contribution–Access Network (CAN) **Open Coordination Infrastructure** CAN allocates access to shared resources using verified **contribution**, **reliability**, and **care** signals. It operates as a parallel coordination layer that complements monetary systems and digital public infrastructure. --- ## Core Documents These documents define CAN’s governance, safeguards, technical architecture, and institutional responsibilities.
+-├─ [Policy Overview](about/POLICY_ABOUT.md) ├─ ⚖️ [For Regulators](about/FOR_REGULATORS.md) ├─ [For Standards and Institutional Alignment](standards-and-institutional-alignment.md) ├─ [AI and Agent Participation](about/ai-and-agents-participation.md) ├─ [For Universities & Research](about/FOR_UNIVERSITIES_AND_RESEARCH.md) ├─ [For Developers](about/FOR_DEVELOPERS.md) ├─ [Integration Policy](integrations/INTEGRATION_POLICY.md) └─ [Backend Documentation (GitHub)](https://github.com/value-coordination-CAN/can-framework/blob/main/backend/README.md) --- ## Publications / Briefings / Working Papers - [WP-001: From Six Degrees of Separation to Direct Value Exchange](publications/wp-001-network-value/) - [WP-002: Practical Post-Money Resource Allocation for Real Humans](publications/wp-002-practical-post-money-allocation/) - [WP-003: Gaming as a Civilisational Testbed for Post-Monetary Coordination](publications/wp-003-gaming-coordination.md) - [WP-004: Moving Beyond Money — From Proxy Coordination to Direct Value Handling](publications/wp-004-moving-beyond-money.md) --- ## Repository - GitHub: https://github.com/value-coordination-CAN/can-framework --- ## Integrations & Platforms - [Integrations Overview](integrations/index.md) - [LinkedIn (Consent Import)](https://github.com/value-coordination-CAN/can-framework/blob/main/backend/README_LINKEDIN_INTEGRATION.md) ## Principles - Transparency - Contestability - Human Oversight - Privacy by Design - Institutional Accountability
++├─ [Policy Overview](about/POLICY_ABOUT.md) ├─ ⚖️ [For Regulators](about/FOR_REGULATORS.md) ├─ [For Standards and Institutional Alignment](standards-and-institutional-alignment.md) ├─ [AI and Agent Participation](about/ai-and-agents-participation.md) ├─ [For Universities & Research](about/FOR_UNIVERSITIES_AND_RESEARCH.md) ├─ [For Developers](about/FOR_DEVELOPERS.md) ├─ [Integration Policy](integrations/INTEGRATION_POLICY.md) └─ [Backend Documentation (GitHub)](https://github.com/value-coordination-CAN/can-framework/blob/main/backend/README.md) --- ## Publications / Briefings / Working Papers - [WP-001: From Six Degrees of Separation to Direct Value Exchange](publications/wp-001-network-value/) - [WP-002: Practical Post-Money Resource Allocation for Real Humans](publications/wp-002-practical-post-money-allocation/) - [WP-003: Gaming as a Civilisational Testbed for Post-Monetary Coordination](publications/wp-003-gaming-coordination.md) - [WP-004: Moving Beyond Money — From Proxy Coordination to Direct Value Handling](publications/wp-004-moving-beyond-money.md) - [WP-005: Six-Degree Network Ledger Architecture and Hybrid Non-Monetary Complex Settlement](publications/wp-005-six-degree-network-ledger.md) - [WP-006: Operationalising Graph Settlement — Simulation, Governance Stress Testing, and Deployment](publications/wp-006-operationalising-graph-settlement.md) --- ## Repository - GitHub: https://github.com/value-coordination-CAN/can-framework --- ## Integrations & Platforms - [Integrations Overview](integrations/index.md) - [LinkedIn (Consent Import)](https://github.com/value-coordination-CAN/can-framework/blob/main/backend/README_LINKEDIN_INTEGRATION.md) ## Principles - Transparency - Contestability - Human Oversight - Privacy by Design - Institutional Accountability
+diff --git a/docs/publications/wp-005-six-degree-network-ledger.md b/docs/publications/wp-005-six-degree-network-ledger.md
+new file mode 100644
+index 0000000..c5d3d45
+--- /dev/null
++++ b/docs/publications/wp-005-six-degree-network-ledger.md
+@@ -0,0 +1,238 @@
++# Contribution–Access Network (CAN)
++## WP-005: Six-Degree Network Ledger Architecture and Hybrid Non-Monetary Complex Settlement
++
++**Working Paper WP-005**  
++**Status:** Publication Draft  
++**Version:** 1.0  
++**Date:** 2026  
++
++---
++
++## Abstract
++
++This paper extends the Contribution–Access Network (CAN) framework into a graph-native coordination architecture capable of operating across multi-degree separation.
++
++It formalises:
++
++- Networked contribution propagation
++- Multi-degree trust computation
++- Explicit need–capacity discovery
++- Non-Monetary Complex Settlement (NMCS)
++- A hybrid bridge from monetary settlement to direct value handling
++
++Where monetary systems collapse coordination into scalar exchange (“A pays B”), CAN replaces exchange settlement with graph settlement — dynamically updating access weights based on verified enablement across dependency chains.
++
++This architecture enables large-scale coordination without tradable tokens, without price mediation as primary allocator, and without centralised clearing authorities.
++
++---
++
++## 1. Motivation
++
++Modern production, knowledge creation, and care systems do not operate bilaterally.
++
++Outcomes are multi-hop.
++
++Housing, software, research, food distribution, education, and infrastructure depend on extended enablement chains across numerous actors who may never directly transact.
++
++Monetary settlement compresses these dependency graphs into scalar transfers. The complexity of enablement becomes invisible behind price signals.
++
++CAN makes this structure explicit.
++
++WP-005 introduces the six-degree network architecture required to coordinate multi-hop systems without collapsing them into financial exchange.
++
++---
++
++## 2. From Ledgers to Graph Systems
++
++Earlier CAN specifications introduced three ledgers:
++
++1. Contribution  
++2. Reliability  
++3. Care  
++
++In WP-005 these evolve into a dynamic graph architecture.
++
++Let:
++
++**G = (N, E, W)**
++
++Where:
++
++- **N** = participants (nodes)
++- **E** = verified contribution or enablement edges
++- **W** = weighted, time-sensitive trust and impact metrics
++
++Allocation decisions derive from graph topology rather than scalar balances.
++
++Settlement becomes structural rebalancing within the network.
++
++---
++
++## 3. Networked Contribution Ledger (NCL)
++
++### 3.1 Multi-Degree Contribution
++
++Each verified contribution generates:
++
++- A participant node
++- A directed enablement edge
++- A weighted impact trace
++
++Contribution recognition occurs at:
++
++- **Direct level** (A → B)
++- **Indirect level** (A → B → C → D)
++- **Systemic level** (infrastructure contributions affecting unknown beneficiaries)
++
++Impact weight decays over network distance unless reinforced through multi-path validation.
++
++Contribution cannot be:
++
++- Transferred
++- Sold
++- Abstracted into universal credit
++
++It influences only future access priority within governed resource pools.
++
++---
++
++## 4. Trust Propagation Ledger (TPL)
++
++Trust within CAN is neither binary nor centrally assigned.
++
++Trust(A → Z) is computed via:
++
++- Shortest validated paths
++- Path redundancy
++- Reliability history
++- Governance cell validation
++- Degree distance decay
++
++Trust weakens across degrees unless reinforced through diverse, independent validation paths.
++
++### 4.1 Anti-Capture Safeguards
++
++To prevent clique amplification and systemic manipulation, CAN incorporates:
++
++- Path diversity thresholds
++- Reinforcement caps
++- AI-assisted anomaly detection
++- Random audit sampling
++- Cross-cell arbitration
++
++Trust must emerge from distributed validation, not concentrated clusters.
++
++---
++
++## 5. Need–Capacity Discovery Layer (NCDL)
++
++Money obscures demand behind price.
++
++CAN surfaces demand directly.
++
++Each participant declares:
++
++- Needs
++- Verified constraints
++- Available capacities
++- Latent competencies
++
++This produces a dynamic bipartite graph:
++
++**Needs ↔ Capacities**
++
++The coordination layer identifies:
++
++- Direct matches
++- Multi-hop enablement chains
++- Surplus pools
++- Structural bottlenecks
++
++Allocation becomes proactive routing rather than reactive bidding.
++
++---
++
++## 6. Complex Settlement Engine (CSE)
++
++### 6.1 Multi-Hop Settlement
++
++Monetary systems settle bilaterally.
++
++CAN settles graph-wide.
++
++If Z receives housing enabled by actors A–F, the system:
++
++- Maps the full dependency graph
++- Assigns proportional enablement weight
++- Updates contribution and reliability metrics
++- Rebalances future access priority
++
++No token circulates.
++
++The graph updates.
++
++### 6.2 Reverse Propagation
++
++If Z later contributes to infrastructure benefiting A–F, weights propagate backward across dependency paths.
++
++Settlement becomes recursive network reinforcement — not exchange closure.
++
++---
++
++## 7. Access Computation
++
++Access priority for participant *n* within a given resource pool:
++
++**P(n) = f(**  
++direct contribution,  
++propagated contribution,  
++trust centrality,  
++reliability stability,  
++verified need factor,  
++governance constraints  
++**)**  
++
++This is a computed vector within each resource pool, not a stored balance.
++
++---
++
++## 8. Non-Monetary Complex Settlement (NMCS)
++
++### 8.1 Definition
++
++Non-Monetary Complex Settlement (NMCS) is:
++
++Graph-based rebalancing of contribution and access weights across multi-hop dependency chains without the transfer of tradable tokens.
++
++Settlement updates network structure rather than transferring currency.
++
++### 8.2 Why This Matters
++
++NMCS enables:
++
++- Recognition of distributed enablement
++- Multi-degree coordination
++- Settlement without scalar exchange
++- Large-scale non-monetary cooperation
++
++It replaces payment finality with structural equilibrium.
++
++---
++
++## 9. Hybrid Transition Bridge
++
++Immediate removal of money is neither practical nor stable.
++
++NMCS enables coexistence.
++
++**Layer 1 – Monetary Interface**
++
++- Legal compliance
++- Taxation
++- External exchange
++
++**Layer 2 – Graph Settlement (CAN)**
++
++- Contribution weighting
++- Trust propagation
++- Access rebalancing
++
++Money handles compliance.
++
++NMCS handles coordination.
++
++Over time, monetary settlement becomes peripheral in domains where graph settlement proves more efficient.
++
++Transition is evolutionary — not abrupt.
++
++---
++
++## 10. Applied Illustration: Platform Mediation vs Graph Settlement
++
++Consider the ecosystem of Google, which has distributed over USD 100 billion to creators via advertising revenue-sharing systems.
++
++The structural topology:
++
++- A → Z (Creators provide informational value for free)
++- Z → Y (Users provide attention to advertisers)
++- Y → B (Advertisers pay platform)
++- B → A (Platform redistributes revenue)
++
++Where:
++
++- A = Content creators
++- Z = Users
++- Y = Advertisers
++- B = Platform infrastructure
++
++Creators provide knowledge to users for free. Users do not pay creators directly.
++
++Monetisation occurs indirectly through advertising markets. The platform becomes central clearing authority.
++
++The true value path (A → Z) is non-monetary; settlement is displaced to advertising exchange.
++
++Under NMCS:
++
++- A → Z contribution would be directly recognised
++- Z engagement would reinforce contribution weights
++- Infrastructure contribution by B would be separately weighted
++- Revenue (in hybrid phase) would be treated as external input
++
++The graph computes enablement across degrees without requiring a central redistribution monopoly.
++
++---
++
++## 11. Figures
++
++![Figure 1: Six-Degree Graph Settlement Model](../assets/wp-005-figure1-graph-model.png)
++
++![Figure 2: Hybrid Transition Bridge](../assets/wp-005-figure2-hybrid-bridge.png)
++
++---
++
++## 12. Structural Implications
++
++This architecture enables:
++
++- Coordination without price as primary allocator
++- Trust without central authority
++- Settlement without tokens
++- Explicit recognition of multi-degree enablement
++- Gradual transition from monetary mediation to direct value handling
++
++Where money asks:
++
++“Who paid whom?”
++
++CAN asks:
++
++“Who enabled what — across how many degrees — and how should access adjust accordingly?”
++
++---
++
++## 13. Conclusion
++
++WP-005 formalises the transition from ledger coordination to graph coordination.
++
++By embedding six-degree propagation, need discovery, and NMCS into the core of CAN, this architecture:
++
++- Preserves large-scale operability
++- Reduces extraction pressure
++- Enables hybrid transition
++- Gradually renders monetary settlement structurally optional
++
++This is not abolition by decree.
++
++It is replacement by functional superiority.
++
++Graph settlement replaces exchange settlement. Direct value handling replaces price mediation.
++
++The coordination layer evolves.
+diff --git a/docs/publications/wp-006-operationalising-graph-settlement.md b/docs/publications/wp-006-operationalising-graph-settlement.md
+new file mode 100644
+index 0000000..d19b0a1
+--- /dev/null
++++ b/docs/publications/wp-006-operationalising-graph-settlement.md
+@@ -0,0 +1,214 @@
++# Contribution–Access Network (CAN)
++## WP-006: Operationalising Graph Settlement — Simulation, Governance Stress Testing, and Deployment Framework
++
++**Working Paper WP-006**  
++**Status:** Technical & Deployment Specification  
++**Version:** 1.0  
++**Date:** 2026  
++
++---
++
++## Abstract
++
++WP-005 formalised the Six-Degree Network Ledger Architecture and Non-Monetary Complex Settlement (NMCS) as the structural evolution of CAN.
++
++WP-006 operationalises that architecture by specifying:
++
++- Computational implementation of graph settlement
++- Weight decay and trust propagation models
++- Simulation framework for multi-hop coordination
++- Adversarial stress testing mechanisms
++- Governance cell deployment model
++- Phased real-world rollout strategy
++
++Where WP-005 established theory and structure, WP-006 establishes execution.
++
++---
++
++## 1. Objective
++
++To demonstrate that:
++
++1. Graph settlement is computationally feasible at scale
++2. Trust propagation can be stabilised across large networks
++3. NMCS remains robust under adversarial conditions
++4. Hybrid transition can occur without institutional shock
++
++---
++
++## 2. Computational Model
++
++### 2.1 Graph Definition
++
++Let:
++
++**G(t) = (N, E, W(t))**
++
++Where:
++
++- N = participants
++- E = verified enablement edges
++- W(t) = time-dependent weight matrix
++
++Each edge e(i, j) may carry:
++
++- contribution weight (c)
++- reliability modifier (r)
++- validation multiplier (v)
++- decay factor over degree distance (d^k)
++
++Total propagated contribution is computed without tokens and without transferability.
++
++### 2.2 Degree Decay
++
++Impact decays over network distance to prevent permanent dominance and infinite accumulation.
++
++Example options:
++
++- exponential: d^k = e^(−λk)
++- linear capped: d^k = max(0, 1 − αk)
++- adaptive: adjust decay using path redundancy
++
++---
++
++## 3. Trust Computation
++
++Trust(A → Z) is computed as an aggregate of validated paths weighted by:
++
++- path length (degree distance)
++- reliability persistence
++- governance validation
++- redundancy (multi-path confirmation)
++
++Clique/collusion risks are mitigated via:
++
++- path diversity requirements
++- reinforcement caps
++- anomaly detection
++- random audits
++
++---
++
++## 4. Access Allocation Engine
++
++Access priority is computed per resource pool as a vector:
++
++P(n, pool) = w1(C_direct) + w2(C_propagated) + w3(Trust) + w4(Reliability) + w5(Need) − w6(Overconcentration)
++
++Weights are pool-specific and governance-controlled.
++
++---
++
++## 5. Simulation Framework
++
++### 5.1 Baseline Network Simulation
++
++Test:
++
++- 10^3–10^6 nodes
++- varying participation rates
++- varying validation strictness
++- adversarial injection rates
++
++Measure:
++
++- allocation variance and fairness
++- concentration drift
++- trust collapse thresholds
++- recovery time after shocks
++
++### 5.2 Platform Topology Simulation (Creator → User → Advertiser → Platform)
++
++Model:
++
++- A → Z (free informational provision)
++- Z → Y (attention)
++- Y → B (revenue)
++
++Replace central redistribution logic with NMCS propagation.
++
++Measure:
++
++- creator stability
++- dependency reduction on central payout
++- resilience under demand shocks
++
++### 5.3 Free-Rider Stress Test
++
++Inject passive actors and observe:
++
++- trust decay
++- tier pressure (access reduction without punitive deprivation)
++- system stability under 5/10/20% passive rates
++
++---
++
++## 6. Governance Cell Deployment
++
++Cells manage:
++
++- local validation
++- edge verification
++- appeals and disputes
++- parameter tuning per pool
++
++Safeguards:
++
++- rotation and term limits
++- cross-cell arbitration
++- transparent audit trails
++
++---
++
++## 7. Hybrid Deployment Strategy
++
++Phased rollout:
++
++1. institutional pilots (bounded domains)
++2. multi-pool integration (cross-domain graph)
++3. monetary shrinkage (price mediation reduces where graph settlement performs)
++
++Money remains a compliance interface where required.
++
++---
++
++## 8. Adversarial Models
++
++Stress tests include:
++
++- trust ring inflation
++- contribution spam
++- governance capture attempts
++
++Mitigation relies on:
++
++- diversity requirements
++- auditability
++- anomaly detection
++- contestability and arbitration
++
++---
++
++## 9. Outcomes and Metrics
++
++Define measurable indicators:
++
++- concentration coefficient
++- trust dispersion index
++- allocation fairness variance
++- retention rate of contributors
++- shock recovery time
++
++These metrics serve as empirical validation criteria for CAN deployments.
++
++---
++
++## 10. Conclusion
++
++WP-005 defined the architecture.
++
++WP-006 defines operationalisation.
++
++Graph settlement is simulation-ready, governance-testable, and deployable in hybrid environments without requiring abrupt abolition of monetary systems.
+diff --git a/docs/assets/wp-005-figure1-graph-model.png b/docs/assets/wp-005-figure1-graph-model.png
+new file mode 100644
+index 0000000..1111111
+Binary files /dev/null and b/docs/assets/wp-005-figure1-graph-model.png differ
+diff --git a/docs/assets/wp-005-figure2-hybrid-bridge.png b/docs/assets/wp-005-figure2-hybrid-bridge.png
+new file mode 100644
+index 0000000..2222222
+Binary files /dev/null and b/docs/assets/wp-005-figure2-hybrid-bridge.png differ
+diff --git a/tools/generate_wp005_figures.py b/tools/generate_wp005_figures.py
+new file mode 100644
+index 0000000..0ad6c1a
+--- /dev/null
++++ b/tools/generate_wp005_figures.py
+@@ -0,0 +1,132 @@
++"""
++Generate WP-005 figures for the MkDocs site.
++
++Outputs:
++  docs/assets/wp-005-figure1-graph-model.png
++  docs/assets/wp-005-figure2-hybrid-bridge.png
++
++Usage:
++  python tools/generate_wp005_figures.py
++"""
++
++from pathlib import Path
++
++import matplotlib.pyplot as plt
++
++
++ROOT = Path(__file__).resolve().parents[1]
++OUT_DIR = ROOT / "docs" / "assets"
++OUT_DIR.mkdir(parents=True, exist_ok=True)
++
++
++def fig1_graph_model(out_path: Path) -> None:
++    plt.figure()
++
++    positions = {
++        "A\nCreator": (0, 1),
++        "B\nInfrastructure": (1, 2),
++        "Z\nUser": (2, 1),
++        "Y\nAdvertiser": (3, 2),
++        "Network\nGraph Settlement": (2, 3),
++    }
++
++    for node, (x, y) in positions.items():
++        plt.scatter(x, y)
++        plt.text(x, y + 0.1, node, ha="center")
++
++    edges = [
++        ("A\nCreator", "Z\nUser"),
++        ("Z\nUser", "Y\nAdvertiser"),
++        ("Y\nAdvertiser", "B\nInfrastructure"),
++        ("B\nInfrastructure", "A\nCreator"),
++        ("A\nCreator", "Network\nGraph Settlement"),
++        ("Z\nUser", "Network\nGraph Settlement"),
++        ("Y\nAdvertiser", "Network\nGraph Settlement"),
++        ("B\nInfrastructure", "Network\nGraph Settlement"),
++    ]
++
++    for start, end in edges:
++        plt.plot(
++            [positions[start][0], positions[end][0]],
++            [positions[start][1], positions[end][1]],
++        )
++
++    plt.title("Figure 1: Six-Degree Graph Settlement Model")
++    plt.xticks([])
++    plt.yticks([])
++    plt.savefig(out_path, bbox_inches="tight", dpi=200)
++    plt.close()
++
++
++def fig2_hybrid_bridge(out_path: Path) -> None:
++    plt.figure()
++
++    positions = {
++        "Monetary\nSettlement Layer": (1, 3),
++        "Hybrid\nInterface": (1, 2),
++        "Graph-Based\nNMCS Layer": (1, 1),
++        "Direct Value\nHandling": (1, 0),
++    }
++
++    for node, (x, y) in positions.items():
++        plt.scatter(x, y)
++        plt.text(x, y + 0.1, node, ha="center")
++
++    edges = [
++        ("Monetary\nSettlement Layer", "Hybrid\nInterface"),
++        ("Hybrid\nInterface", "Graph-Based\nNMCS Layer"),
++        ("Graph-Based\nNMCS Layer", "Direct Value\nHandling"),
++    ]
++
++    for start, end in edges:
++        plt.plot(
++            [positions[start][0], positions[end][0]],
++            [positions[start][1], positions[end][1]],
++        )
++
++    plt.title("Figure 2: Hybrid Transition Bridge")
++    plt.xticks([])
++    plt.yticks([])
++    plt.savefig(out_path, bbox_inches="tight", dpi=200)
++    plt.close()
++
++
++def main() -> None:
++    fig1_graph_model(OUT_DIR / "wp-005-figure1-graph-model.png")
++    fig2_hybrid_bridge(OUT_DIR / "wp-005-figure2-hybrid-bridge.png")
++    print("Generated WP-005 figures in docs/assets/")
++
++
++if __name__ == "__main__":
++    main()

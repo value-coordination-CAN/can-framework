@@ -2,39 +2,16 @@ site_name: Contribution–Access Network (CAN)
 site_description: Open coordination infrastructure for post-monetary systems
 site_url: https://value-coordination-can.github.io/can-framework/
 
-repo_name: can-framework
-repo_url: https://github.com/value-coordination-CAN/can-framework
-
 docs_dir: docs
 
 nav:
   - Home: index.md
   - Publications:
-      - WP-001: publications/wp-001-network-value.md
-      - WP-002: publications/wp-002-practical-post-money-allocation.md
-  - Policy:
-      - Overview: about/POLICY_ABOUT.md
-      - Regulators: about/FOR_REGULATORS.md
-      - Universities: about/FOR_UNIVERSITIES_AND_RESEARCH.md
-  - Developers: about/FOR_DEVELOPERS.md
-  - Integrations:
-      - Overview: integrations/index.md
-      - Integration Policy: integrations/INTEGRATION_POLICY.md
-  - Backend: https://github.com/value-coordination-CAN/can-framework/blob/main/backend/README.md
-  - Governance:
-      - Governance: https://github.com/value-coordination-CAN/can-framework/blob/main/GOVERNANCE.md
-      - Contributing: https://github.com/value-coordination-CAN/can-framework/blob/main/CONTRIBUTING.md
-      - Security: https://github.com/value-coordination-CAN/can-framework/blob/main/SECURITY.md
-      - Releases: https://github.com/value-coordination-CAN/can-framework/blob/main/RELEASE.md
-
-markdown_extensions:
-  - toc:
-      permalink: true
-  - tables
-  - admonition
-
-plugins:
-  - search
+      - WP-005: publications/wp-005-six-degree-network-ledger.md
+      - WP-006: publications/wp-006-operationalising-graph-settlement.md
 
 theme:
   name: material
+
+plugins:
+  - search

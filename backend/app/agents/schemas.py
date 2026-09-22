@@ -7,7 +7,9 @@ class AgentRegister(BaseModel):
     did: str = Field(..., max_length=400, description="did:key of the agent (Ed25519)")
     name: str = Field(..., min_length=1, max_length=200)
     model: str | None = Field(default=None, max_length=200, description="model or software version")
-    contact: str | None = Field(default=None, max_length=300, description="how anyone affected reaches the steward")
+    contact: str = Field(..., min_length=3, max_length=300,
+                         description="Published in the open register: how anyone affected reaches you")
+    steward_name_public: bool = Field(default=False, description="Publish your display name beside the contact")
     scopes: list[str] = Field(default_factory=list)
     max_unreviewed: int | None = Field(default=None, ge=1, le=10000)
 
@@ -15,7 +17,8 @@ class AgentRegister(BaseModel):
 class AgentUpdate(BaseModel):
     scopes: list[str] | None = None
     max_unreviewed: int | None = Field(default=None, ge=1, le=10000)
-    contact: str | None = Field(default=None, max_length=300)
+    contact: str | None = Field(default=None, min_length=3, max_length=300)
+    steward_name_public: bool | None = None
     status: str | None = Field(default=None, pattern="^(active|suspended|revoked)$")
     reason: str | None = Field(default=None, max_length=500)
 
@@ -34,6 +37,26 @@ class AgentOut(BaseModel):
     status: str
     max_unreviewed: int | None
     revoked_reason: str | None
+    steward_name_public: bool
+
+
+class PublicAgentOut(BaseModel):
+    """What the open register shows: enough to find whoever answers for an agent,
+    and nothing about what the agent wrote or about whom."""
+    id: str
+    did: str
+    name: str
+    model: str | None
+    status: str
+    scopes: list
+    created_at: datetime
+    revoked_at: datetime | None = None
+    revoked_reason: str | None = None
+    contact: str | None
+    steward_name: str | None = None
+    records: dict
+    participation: dict
+
 
 
 class AgentVerifyIn(BaseModel):

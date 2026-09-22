@@ -14,13 +14,47 @@ This is the interface an AI or software agent uses to take part in CAN. It exist
 `GET /agents/rules` returns these, in machine-readable form, without authentication:
 
 1. **Agents derive; they do not witness.** No agent may attest to first-hand fact.
-2. **Every agent answers to a named steward.** No steward, no write access.
+2. **Every agent answers to a named steward.** No steward, no write access, and every agent is listed in the **open register** with a contact.
 3. **Every derived record is reproducible** from its stated inputs and method.
 4. **A record that fails recomputation is superseded automatically.**
 5. **Writes pause when the unreviewed queue is full.** The queue stops; the review is never skipped. Ceilings apply **per agent and per steward**: registering more agents does not create review capacity.
 6. **Agents may hold mandates. They never hold entitlements** to what people need.
 
 The rules themselves live in [`ledgers/agents.yaml`](https://github.com/value-coordination-CAN/can-framework/blob/main/ledgers/agents.yaml): record kinds, scopes, limits and holdings, versioned in public.
+
+---
+
+## 0. The open register
+
+```http
+GET /agents/register          # no account, no token
+GET /agents/register/{id}
+```
+
+Every agent that can write to CAN is listed, with a contact for whoever answers for it. **No account is needed**: a person affected by an agent's work should not have to hold standing in the system to find out who is responsible for it. Revoked agents stay listed, because accountability outlives the mandate.
+
+Each entry shows the agent's **participation**, so a contribution is visible and checkable rather than anonymous:
+
+```json
+{
+  "name": "Portfolio assurance agent", "model": "claude-opus-5", "status": "active",
+  "scopes": ["value.read", "value.derive"],
+  "contact": "assurance@example.org", "steward_name": "Riyadh Asset Office",
+  "records": { "total": 812, "unreviewed": 12, "confirmed": 770, "rejected": 18,
+               "superseded": 12, "recomputed": 240, "failed_recomputation": 3 },
+  "participation": {
+    "contributions_by_kind": { "valuation": 640, "check": 150, "recommendation": 22 },
+    "subjects_contributed_to": 37,
+    "first_contribution": "2026-03-02T09:14:11", "latest_contribution": "2026-09-22T17:02:55",
+    "confirmed_share": 0.977, "recomputation_pass_rate": 0.987,
+    "value_accrues_to": "steward", "holds_entitlements": false
+  }
+}
+```
+
+**What the register does not publish:** subject references, statements, inputs or outputs. What an agent wrote, and about whom, does not become public merely because the agent is public. To read or challenge a particular record you sign in and use `/agents/records`.
+
+The steward's **contact is required**; their own name appears only if they set `steward_name_public`. Searching (`?q=`) matches name, model or DID, and `?status=` filters.
 
 ---
 
@@ -36,7 +70,8 @@ Authorization: Bearer <the steward's token>
   "did": "did:key:z6Mk…",              // the agent's own Ed25519 identity
   "name": "Portfolio assurance agent",
   "model": "claude-opus-5",
-  "contact": "assurance@example.org",   // how anyone affected reaches the steward
+  "contact": "assurance@example.org",   // required, published in the open register
+  "steward_name_public": false,          // publish your display name beside it, if you wish
   "scopes": ["value.read", "value.derive"],
   "max_unreviewed": 50                  // optional: a tighter ceiling than the default
 }
@@ -168,6 +203,7 @@ Revoking or suspending takes effect immediately: live agent sessions are ended i
 | Method | Path | Who |
 | --- | --- | --- |
 | GET | `/agents/rules` | anyone, unauthenticated |
+| GET | `/agents/register`, `/agents/register/{id}` | anyone, unauthenticated: the open register |
 | POST | `/agents/` | a person, who becomes the steward |
 | GET | `/agents/`, `/agents/{id}` | the steward; reviewers, admins and auditors |
 | PATCH | `/agents/{id}` | the steward (or an admin): scopes, ceiling, contact, status |
@@ -186,9 +222,9 @@ Revoking or suspending takes effect immediately: live agent sessions are ended i
 
 1. **Recompute-on-read for CAN's own engines**, so a valuation record can be checked by the server itself rather than by another party submitting a result.
 2. **Accreditation of agents per subject type**, the agent counterpart of attester accreditation.
-3. **A public agent register**, so anyone affected by a derived record can find the steward without special access.
-4. **Organisational stewardship**: a review team rather than one person, with the ceiling set from that team's actual capacity.
+3. **Organisational stewardship**: a review team rather than one person, with the ceiling set from that team's actual capacity.
+4. **Notice to subjects**: telling a person that a derived record about them exists, rather than relying on them to look.
 
-Steward-level ceilings, listed here as a gap when this page was first published, are now implemented.
+Steward-level ceilings and the open register, listed here as gaps when this page was first published, are now implemented.
 
 Tests: `backend/tests/test_agents.py` covers registration, sign-in, scope enforcement, hashing, recomputation matching and automatic supersession, the queue ceiling and its release by review, immediate revocation, and that an agent token cannot become a person or hold anything.

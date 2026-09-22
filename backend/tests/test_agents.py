@@ -20,6 +20,87 @@ def register_agent(client, steward_token, did, scopes=("value.derive",), **extra
                        headers=auth(steward_token))
 
 
+def test_register_is_public_and_shows_who_answers(client, agent):
+    """Anyone affected can find the steward without an account."""
+    client.post("/agents/records", json=DERIVATION, headers=auth(agent["token"]))
+    entries = client.get("/agents/register").json()  # no Authorization header
+    entry = next(e for e in entries if e["id"] == agent["agent"]["id"])
+    assert entry["contact"] == "steward@example.org"
+    assert entry["status"] == "active" and entry["did"] == agent["did"]
+    assert entry["records"] == {"total": 1, "unreviewed": 1, "confirmed": 0, "rejected": 0,
+                                "superseded": 0, "recomputed": 0, "failed_recomputation": 0}
+    # the steward's own name is published only if they chose to
+    assert entry["steward_name"] is None
+    one = client.get(f"/agents/register/{agent['agent']['id']}").json()
+    assert one["id"] == entry["id"]
+
+
+def test_register_does_not_publish_what_the_agent_wrote(client, agent):
+    client.post("/agents/records", json={**DERIVATION, "subject_ref": "user:private-person-id"},
+                headers=auth(agent["token"]))
+    body = client.get("/agents/register").text
+    assert "private-person-id" not in body
+    assert DERIVATION["statement"] not in body
+    assert "occupancy" not in body
+    # reading a record itself still needs an account
+    assert client.get("/agents/records").status_code in {401, 403}
+
+
+def test_register_shows_participation(client, agent):
+    """An agent's contribution is visible: what it did, how much, and how it held up."""
+    for kind, scope_ok in [("valuation", True), ("valuation", True), ("check", True)]:
+        client.post("/agents/records", json={**DERIVATION, "kind": kind}, headers=auth(agent["token"]))
+    rec = client.get("/agents/records", headers=auth(agent["steward"])).json()[0]
+    client.post(f"/agents/records/{rec['id']}/review", json={"accept": True, "note": "checked"}, headers=auth(agent["steward"]))
+    client.post(f"/agents/records/{rec['id']}/recompute", json={"output": DERIVATION["output"], "method": "rerun"},
+                headers=auth(agent["steward"]))
+
+    p = client.get(f"/agents/register/{agent['agent']['id']}").json()["participation"]
+    assert p["contributions_by_kind"] == {"valuation": 2, "check": 1}
+    assert p["subjects_contributed_to"] == 1
+    assert p["first_contribution"] and p["latest_contribution"]
+    assert p["confirmed_share"] == 1.0 and p["recomputation_pass_rate"] == 1.0
+    # what the agent contributes belongs to the steward; the agent holds nothing
+    assert p["value_accrues_to"] == "steward" and p["holds_entitlements"] is False
+
+
+def test_register_shows_how_an_agents_work_held_up(client, agent):
+    rec = client.post("/agents/records", json=DERIVATION, headers=auth(agent["token"])).json()
+    client.post(f"/agents/records/{rec['id']}/recompute", json={"output": {"value": 1.0}, "method": "rerun"},
+                headers=auth(agent["steward"]))
+    entry = client.get(f"/agents/register/{agent['agent']['id']}").json()
+    assert entry["records"]["failed_recomputation"] == 1 and entry["records"]["superseded"] == 1
+
+
+def test_steward_can_publish_their_name_and_change_the_contact(client, agent):
+    aid = agent["agent"]["id"]
+    client.patch(f"/agents/{aid}", json={"steward_name_public": True, "contact": "oversight@example.org"},
+                 headers=auth(agent["steward"]))
+    entry = client.get(f"/agents/register/{aid}").json()
+    assert entry["steward_name"] == "Steward" and entry["contact"] == "oversight@example.org"
+
+
+def test_revoked_agents_stay_listed(client, agent):
+    aid = agent["agent"]["id"]
+    client.patch(f"/agents/{aid}", json={"status": "revoked", "reason": "replaced"}, headers=auth(agent["steward"]))
+    entry = client.get(f"/agents/register/{aid}").json()
+    assert entry["status"] == "revoked" and entry["revoked_reason"] == "replaced"
+    assert [e["id"] for e in client.get("/agents/register", params={"status": "revoked"}).json()] == [aid]
+
+
+def test_register_can_be_searched(client, agent):
+    assert client.get("/agents/register", params={"q": "test-model-1"}).json()[0]["id"] == agent["agent"]["id"]
+    assert client.get("/agents/register", params={"q": "no-such-agent"}).json() == []
+
+
+def test_a_contact_is_required_to_register(client):
+    _, steward = did_login(client)
+    create_profile(client, steward, "NoContact")
+    did, _ = new_did()
+    r = client.post("/agents/", json={"did": did, "name": "Anonymous agent", "scopes": []}, headers=auth(steward))
+    assert r.status_code == 422
+
+
 def agent_sign_in(client, did, sk):
     ch = client.get("/auth/did/challenge").json()["challenge"]
     sig = sk.sign(ch.encode()).signature
@@ -196,16 +277,19 @@ def test_agents_cannot_hold_or_become_people(client, agent):
     assert client.post("/value/assets", json={"name": "x", "kind": "y"}, headers=t).status_code == 403
     assert client.post("/allocation/requests", json={"pool": "housing", "description": "x"}, headers=t).status_code == 403
     assert client.post("/ledger/entries", json={"ledger_type": "contribution", "metric": "peer_validation", "value": 1}, headers=t).status_code == 403
-    assert client.post("/agents/", json={"did": "did:key:zOther", "name": "n", "scopes": []}, headers=t).status_code == 403
+    assert client.post("/agents/", json={"did": "did:key:zOther", "name": "n", "contact": "a@example.org", "scopes": []},
+                       headers=t).status_code == 403
 
 
 def test_a_persons_did_cannot_be_registered_as_an_agent(client, agent):
     person_did, person_token = did_login(client)
     create_profile(client, person_token, "Person")
-    r = client.post("/agents/", json={"did": person_did, "name": "n", "scopes": []}, headers=auth(agent["steward"]))
+    r = client.post("/agents/", json={"did": person_did, "name": "n", "contact": "s@example.org", "scopes": []},
+                    headers=auth(agent["steward"]))
     assert r.status_code == 409 and "person" in r.json()["detail"]
     # and the same DID cannot be registered twice
-    dup = client.post("/agents/", json={"did": agent["did"], "name": "n", "scopes": []}, headers=auth(agent["steward"]))
+    dup = client.post("/agents/", json={"did": agent["did"], "name": "n", "contact": "s@example.org", "scopes": []},
+                      headers=auth(agent["steward"]))
     assert dup.status_code == 409
 
 

@@ -19,6 +19,7 @@ from app.db.models import (
     User,
 )
 from app.models.network_edge import NetworkEdge
+from app.value.models import Asset, AssetEvidence, AssetShare, AssuranceRun
 
 
 def _rows(q) -> list[dict]:
@@ -42,6 +43,15 @@ def export_account(db: Session, me: User) -> dict:
         "allocation_requests": _rows(db.query(AllocationRequest).filter(AllocationRequest.user_id == me.id)),
         "appeals": _rows(db.query(Appeal).filter(Appeal.user_id == me.id)),
         "network_edges": _rows(db.query(NetworkEdge).filter(NetworkEdge.source_user_id == me.id)),
+        "assets": [
+            {
+                **_rows([a])[0],
+                "evidence": _rows(db.query(AssetEvidence).filter(AssetEvidence.asset_id == a.id)),
+                "shares": _rows(db.query(AssetShare).filter(AssetShare.asset_id == a.id)),
+                "assurance_runs": _rows(db.query(AssuranceRun).filter(AssuranceRun.asset_id == a.id)),
+            }
+            for a in db.query(Asset).filter(Asset.holder_user_id == me.id)
+        ],
     }
 
 
@@ -85,6 +95,17 @@ def delete_account(db: Session, me: User) -> dict:
         or_(NetworkEdge.source_user_id == uid, NetworkEdge.target_user_id == uid)
     ).delete(synchronize_session=False)
 
+    # Value Assurance (WP-011): assets held, and shares granted to the person
+    asset_ids = [a.id for a in db.query(Asset.id).filter(Asset.holder_user_id == uid)]
+    if asset_ids:
+        db.query(AssuranceRun).filter(AssuranceRun.asset_id.in_(asset_ids)).delete(synchronize_session=False)
+        db.query(AssetShare).filter(AssetShare.asset_id.in_(asset_ids)).delete(synchronize_session=False)
+        db.query(AssetEvidence).filter(AssetEvidence.asset_id.in_(asset_ids)).delete(synchronize_session=False)
+    counts["assets"] = db.query(Asset).filter(Asset.holder_user_id == uid).delete(synchronize_session=False)
+    counts["asset_shares_received"] = db.query(AssetShare).filter(
+        AssetShare.grantee_user_id == uid
+    ).delete(synchronize_session=False)
+
     if subject:
         alias = pseudonym(subject)
         counts["pseudonymised_attestations"] = db.query(LedgerEntry).filter(
@@ -99,6 +120,9 @@ def delete_account(db: Session, me: User) -> dict:
         counts["pseudonymised_dispute_resolutions"] = db.query(EntryDispute).filter(
             EntryDispute.resolved_by == subject
         ).update({EntryDispute.resolved_by: alias}, synchronize_session=False)
+        counts["pseudonymised_asset_evidence"] = db.query(AssetEvidence).filter(
+            AssetEvidence.attester_subject == subject
+        ).update({AssetEvidence.attester_subject: alias}, synchronize_session=False)
         counts["did_sessions"] = db.query(DIDSession).filter(
             DIDSession.did == subject
         ).delete(synchronize_session=False)

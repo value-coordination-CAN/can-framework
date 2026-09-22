@@ -6,6 +6,7 @@ from app.core.config import settings
 from app.db.base import Base
 from app.db import models  # noqa: F401
 from app.models import network_edge  # noqa: F401
+from app.value import models as value_models  # noqa: F401
 
 config = context.config
 fileConfig(config.config_file_name)

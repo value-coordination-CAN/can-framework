@@ -46,6 +46,38 @@ class EvidenceOut(BaseModel):
     superseded_at: datetime | None
 
 
+class ProposalIn(BaseModel):
+    key: str = Field(..., min_length=1, max_length=100)
+    category: str | None = Field(default=None, max_length=50, description="Only for keys outside the model")
+    value: float | None = None
+    source_ref: str = Field(..., min_length=1, max_length=500, description="Where the figure came from")
+    rationale: str | None = Field(default=None, max_length=5000)
+
+
+class ProposalOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    created_at: datetime
+    asset_id: str
+    proposed_by: str
+    agent_id: str | None
+    category: str
+    key: str
+    value: float | None
+    source_ref: str
+    rationale: str | None
+    status: str
+    decision_note: str | None
+    evidence_id: str | None
+
+
+class ProposalDecisionIn(BaseModel):
+    accept: bool
+    note: str | None = Field(default=None, max_length=5000)
+    evidence_ref: str | None = Field(default=None, max_length=500)
+
+
 class MandateIn(BaseModel):
     enabled: bool
     alert_drop_pct: float = Field(10, ge=0, le=100)

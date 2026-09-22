@@ -29,6 +29,11 @@ class Settings(BaseSettings):
     # Secret mixed into hashed external identifiers (e.g. imported connections)
     EXTERNAL_ID_PEPPER: str = "change-me"
 
+    # This node's identity for document exchange. Without a signing key, documents this
+    # node issues are unsigned: consistent, but with nothing standing behind them.
+    NODE_ID: str = "local-node"
+    NODE_SIGNING_KEY: str = ""  # 32-byte Ed25519 seed, base64url
+
     # Directory holding contribution.yaml, reliability.yaml, care.yaml and scoring.yaml.
     # Repo layout: <repo>/ledgers. Docker: mounted at /ledgers.
     LEDGER_CONFIG_DIR: str = str(Path(__file__).resolve().parents[3] / "ledgers")

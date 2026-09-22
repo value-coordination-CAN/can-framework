@@ -32,6 +32,8 @@ class ValueConfig:
     inputs: dict[str, InputDef]
     scenarios: dict[str, dict]
     default_mandate: dict
+    maintenance: dict
+    exchange: dict
 
 
 @lru_cache
@@ -66,6 +68,8 @@ def load_value_config(config_dir: str | None = None) -> ValueConfig:
         inputs=inputs,
         scenarios=raw["scenarios"],
         default_mandate=raw.get("default_mandate", {}),
+        maintenance=raw.get("maintenance", {"stale_evidence_days": 180, "reassess_after_days": 30, "min_confidence": 0.6}),
+        exchange=raw.get("exchange", {"trusted_nodes": {}}),
     )
 
 

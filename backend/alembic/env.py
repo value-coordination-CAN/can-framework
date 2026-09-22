@@ -7,6 +7,7 @@ from app.db.base import Base
 from app.db import models  # noqa: F401
 from app.models import network_edge  # noqa: F401
 from app.value import models as value_models  # noqa: F401
+from app.value import map_models as value_map_models  # noqa: F401
 from app.bridge import models as bridge_models  # noqa: F401
 from app.agents import models as agent_models  # noqa: F401
 

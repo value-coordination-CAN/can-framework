@@ -29,6 +29,7 @@ nav:
   - Implementations:
       - Agent Integration API: implementation/agent-integration-api.md
       - Working API (value, search, exchange): implementation/agent-work-api.md
+      - Value Map API (needs, capacities, discovery): implementation/value-map-api.md
       - WP-010 Bridge Wallet: implementation/wp-010-bridge-wallet.md
       - WP-011 Value Assurance: implementation/wp-011-value-assurance.md
 

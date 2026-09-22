@@ -58,6 +58,13 @@ value_assurance:
     reassess_after_days: 30      # an asset not assessed for this long is due
     min_confidence: 0.6          # below this, attestation is needed rather than more derivation
 
+  # Discovery between nodes (WP-012). Items are findable only if their holder opts in,
+  # and only through a commitment: a node answers match or no match, never a listing.
+  discovery:
+    k_anonymity: 2            # answer only where at least this many items share a commitment
+    epoch_days: 7             # the shared salt rotates on this period
+    max_queries_per_hour: 120 # per caller
+
   # Node-to-node exchange. A document from a trusted node arrives as attested evidence;
   # from anyone else it is held as unverified until someone here attests to it.
   exchange:

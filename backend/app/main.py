@@ -16,6 +16,7 @@ from app.agents.config import load_agent_rules
 from app.agents.routes import router as agents_router
 from app.bridge.routes import router as bridge_router
 from app.value.engine import load_value_config
+from app.value.map_routes import router as map_router
 from app.value.routes import router as value_router
 
 UI_DIR = Path(__file__).resolve().parent / "ui"
@@ -36,6 +37,7 @@ app.include_router(linkedin_router, prefix="/integrations/linkedin", tags=["link
 app.include_router(network_router, prefix="/network", tags=["network"])
 app.include_router(value_router, prefix="/value", tags=["value-assurance (WP-011)"])
 app.include_router(bridge_router, prefix="/bridge", tags=["bridge-wallet (WP-010)"])
+app.include_router(map_router, prefix="/map", tags=["value-map (WP-012)"])
 app.include_router(agents_router, prefix="/agents", tags=["agent participation"])
 
 # Reference UI (static, no build step): http://localhost:8000/ui/

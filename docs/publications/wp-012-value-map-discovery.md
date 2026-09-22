@@ -5,7 +5,7 @@
 **Date:** September 2026  
 **Author:** Alex Nikolov  
 **Builds on:** [WP-001](wp-001-network-value.md) (six degrees), [WP-005](wp-005-six-degree-network-ledger.md) (graph settlement), [WP-010](wp-010-bridge-wallet-participation-funding.md), [WP-011](wp-011-value-assurance-future-proofing.md)  
-**Implementation status:** the map's building blocks exist ([Working API](../implementation/agent-work-api.md)); the discovery protocol in §5 is proposed, not yet built.
+**Implementation status:** steps 1 and 2 of §10 are **built** — needs and capacities, shareable map slices and opt-in commitment discovery on a single node ([Value Map API](../implementation/value-map-api.md)). Steps 3 to 6, the protocol **between** nodes in §5, are still proposed.
 
 ---
 
@@ -89,11 +89,13 @@ Sharing is therefore a deliberate act, at a chosen granularity, that can be revo
 
 Discovery has an obvious hazard. If a node must publish what it holds to be findable, it publishes exactly what an adversary wants. If it publishes nothing, nothing can be found.
 
-The way through is to publish **commitments** rather than contents. For each discoverable item, a node publishes a salted hash over a small number of coarse attributes, such as `type=capacity`, `class=cold_storage`, `region=GCC-E`, `available=Q1-2027`. The commitment is:
+The way through is to answer on **commitments** rather than publish contents. A commitment is a hash over a small number of coarse attributes — `type=capacity`, `class=cold_storage`, `region=GCC-E`, `period=2027-Q1` — mixed with an epoch salt that every node knows, so a searcher who forms the same attributes produces the same commitment. The commitment is:
 
-- **queryable**: a searcher who forms the same coarse attributes produces the same commitment and gets a match;
-- **not enumerable**: the salt and the coarse grain mean the published set cannot be turned back into a catalogue of what a node holds;
+- **queryable**: the same attributes give the same commitment, and the node answers match or no match;
+- **not listable**: there is no endpoint that returns commitments, so a node cannot be scraped for a catalogue of what it holds;
 - **not identifying**: a match reveals that *something* matching exists at that node, not what, whose, or how much.
+
+Being honest about the limit: the attribute space is small, so a determined caller could probe it item class by item class. Secrecy is not what stops that. Three things do: **rate limits** on asking, a **k-anonymity threshold** so a node answers only where several of its items share a commitment and a match never points at one of them, and an **epoch salt that rotates**, so commitments gathered in one period do not carry into the next. Publication is opt-in per item, so an item that should not be findable simply is not.
 
 Anything finer — the quantity, the price, the exact site, the holder — comes after contact, by consent, through a shared slice.
 
@@ -222,11 +224,11 @@ The toll-keeper risk deserves emphasis. A discovery layer that becomes indispens
 
 The pieces that exist today: a node-local graph of assets, evidence, projects and contributions; the per-asset map; portable, redactable, signed documents with verification and import; path search with decay over consented edges; queue and rate discipline for agents.
 
-What this paper proposes adding, in order:
+What this paper proposes adding, in order. **Steps 1 and 2 are now built** ([Value Map API](../implementation/value-map-api.md)):
 
-1. **Map slices**: extend document export from one asset to a chosen sub-graph, with the same hashing and redaction.
-2. **A commitment index**: opt-in, salted commitments per discoverable item, with rotation and a k-anonymity threshold.
-3. **Peering**: explicit, mutual peer relationships between nodes, with their own rate limits and logs.
+1. ✅ **Map slices**: document export extended from one asset to a chosen sub-graph, with the same hashing and redaction.
+2. ✅ **A commitment index**: opt-in, salted commitments per discoverable item, with rotation, rate limits and a k-anonymity threshold.
+3. **Peering**: explicit, mutual peer relationships between nodes, with their own rate limits and logs. *(Next: today a query is answered by the node it is asked, and goes no further.)*
 4. **The query protocol**: hop-limited, TTL-bounded queries returning path proofs rather than contents.
 5. **Introductions**: a consent-based request that each hop may refuse, ending in a shared slice or nothing.
 6. **Local query logs and controls**: what was asked of this node, by whom, and what it answered.

@@ -32,7 +32,8 @@ from app.value.models import Asset, AssetEvidence
 PROFILE = "can.value.v1"
 MAP_PROFILE = "can.map.v1"
 AGREEMENT_PROFILE = "can.agreement.v1"
-PROFILES = (PROFILE, MAP_PROFILE, AGREEMENT_PROFILE)
+TRANSACTION_PROFILE = "can.transaction.v1"
+PROFILES = (PROFILE, MAP_PROFILE, AGREEMENT_PROFILE, TRANSACTION_PROFILE)
 
 
 def _canon(obj) -> bytes:
@@ -177,16 +178,21 @@ def build_map_slice(db: Session, holder_user_id: str, items, assets, *,
     return doc
 
 
-def document_root(doc: dict) -> str:
-    """Covers the header, every item hash (disclosed or withheld) and every body section.
+# Everything except these is a body section and must be covered by the root.
+_NOT_BODY = {"header", "items", "root", "signature"}
 
-    Anything a document asserts must be under the root, or it could be altered unnoticed.
+
+def document_root(doc: dict) -> str:
+    """Covers the header, every item hash (disclosed or withheld) and **every** body section.
+
+    Sections are collected by name rather than listed, so a new profile cannot quietly
+    introduce a section that nothing commits to. Anything a document asserts is under the
+    root, or it could be altered unnoticed.
     """
     return _sha({
         "header": doc["header"],
         "items": sorted(i["hash"] for i in doc["items"]),
-        "valuation": doc.get("valuation"),
-        "agreement": doc.get("agreement"),
+        "body": {k: v for k, v in doc.items() if k not in _NOT_BODY},
     })
 
 

@@ -5,7 +5,7 @@
 **Date:** September 2026  
 **Author:** Alex Nikolov  
 **Builds on:** [WP-007](wp-007-hybrid-integration-payment-rails.md) (hybrid settlement), [WP-008](wp-008-value-discovery-knowledge-vector.md) (the knowledge vector), [WP-010](wp-010-bridge-wallet-participation-funding.md) (the bridge wallet), [WP-011](wp-011-value-assurance-future-proofing.md) (evidenced value), [WP-012](wp-012-value-map-discovery.md) (discovery)  
-**Implementation:** the object machinery exists ([Value Map API](../implementation/value-map-api.md), [Agent Integration API](../implementation/agent-integration-api.md)); the settlement adapters are the work.
+**Implementation:** demonstration 2 is **built** — an agent paying under a mandate, producing a signed `can.transaction.v1` object (§5). The object machinery is in the [Value Map](../implementation/value-map-api.md) and [Agent](../implementation/agent-integration-api.md) APIs; real settlement adapters and offline state remain placeholders.
 
 ---
 
@@ -85,11 +85,30 @@ A trusted transaction object is a signed, portable document with a `profile`, ex
 | Evidence and provenance carried with an asset | **Built** (WP-011) |
 | Contributions, access rights and stakes | **Built** (WP-010) |
 | Payment with proof against verified delivery | **Built** as an invoice flow, with a simulated rail |
+| Payment mandates for agents, and payment under them | **Built** — demonstration 2 below |
+| A transaction-object profile binding mandate to settlement | **Built** — `can.transaction.v1` |
 | Real settlement adapters (stablecoin, instant payment, tokenised deposit, CBDC) | **Placeholders**, deliberately: `app/bridge/rails.py` |
 | Offline state on a secure element | **Placeholder** |
-| A transaction-object profile binding mandate to settlement | **Proposed here** |
 
-The honest summary: CAN has the object machinery and the mandate discipline; it does not have a production settlement adapter, and the transaction profile in §3 is not yet written.
+The honest summary: CAN has the object machinery, the mandate discipline and now a working agent payment under mandate. What it does not have is a production settlement adapter or offline state; both are named placeholders rather than implied capability.
+
+### Demonstration 2, built
+
+*An agent pays within an explicit mandate; a payment outside it is refused before it reaches a rail; the audit trail shows who authorised what.*
+
+A person grants a named agent a **payment mandate**: purposes, per-payment limit, total, allowed payees, whether evidence is required, and an expiry. It is revocable at any moment.
+
+```http
+POST /bridge/mandates   { "agent_id": "…", "purposes": ["materials"], "currency": "USD",
+                          "max_per_payment": 500, "max_total": 1200,
+                          "payee_user_ids": ["…"], "requires_evidence": true, "hours": 24 }
+POST /bridge/payments   { "mandate_id": "…", "payee_user_id": "…", "amount": 400,
+                          "purpose": "materials", "evidence_ref": "invoice 2026-114" }
+```
+
+A settled payment produces a **`can.transaction.v1` object**, signed by the node and verifiable like any other document, carrying the parties (payer, payee, agent and its steward), the mandate it was made under, the purpose, the evidence it answers to and the settlement reference.
+
+Refused, before anything reaches a rail: above the per-payment limit, beyond the total, an unlisted purpose, a payee not on the mandate, wrong currency, missing evidence where the mandate requires it, an expired or revoked mandate, another agent's mandate, money the payer does not have, or money pledged as security. **Every attempt is recorded**, refusals included, because an audit trail that shows only what succeeded tells a person nothing about what their agent tried. The payer sees all of it; a payee sees only what settled.
 
 ---
 
@@ -106,11 +125,11 @@ The honest summary: CAN has the object machinery and the mandate discipline; it 
 
 ## 7. Proposed demonstrations
 
-1. **Offline to settlement.** Two devices agree a payment offline, each holding signed state; when connectivity returns it settles, and the settlement reference joins the object.
-2. **Agent with a mandate.** An agent pays within an explicit mandate; a payment outside it is refused before reaching a rail; the audit trail shows who authorised what.
-3. **Asset-backed payment.** A payment references verified provenance and condition evidence, so the counterparty checks rather than trusts.
+1. **Offline to settlement.** Two devices agree a payment offline, each holding signed state; when connectivity returns it settles, and the settlement reference joins the object. *(Proposed: needs the secure-element adapter.)*
+2. ✅ **Agent with a mandate.** Built, and described in §5. An agent pays within an explicit mandate; anything outside it is refused before reaching a rail; the audit trail shows who authorised what, including what was refused.
+3. **Asset-backed payment.** A payment references verified provenance and condition evidence, so the counterparty checks rather than trusts. *(Partly there: evidence references travel in the object today; binding them to a verified asset record is the remaining step.)*
 
-Each is small enough to build and specific enough to fail honestly.
+Each is small enough to build and specific enough to fail honestly. The one that is built settles on the simulated rail, which is the honest limit of what can be shown without a real settlement integration.
 
 ---
 

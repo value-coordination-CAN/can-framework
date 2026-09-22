@@ -113,10 +113,14 @@ def test_a_query_travels_and_comes_back_as_a_path(client, node_a, admin, monkeyp
     assert near["confidence"] == pytest.approx(0.8 * 0.6)          # one hop, weight 0.8, decayed once
     assert far["node_id"] == "node-c" and far["degree"] == 2
     assert far["confidence"] == pytest.approx(0.8 * 0.3 * 0.6)     # compounded through node-b
-    # the query that went out carried the commitment, a reduced ttl and the path so far
-    assert calls[0]["body"] == {"commitment": target, "ttl": 2, "path": ["node-a"]}
-    # a result carries a path and a confidence, and nothing else about what was found
-    assert set(near) == {"node_id", "path", "degree", "confidence", "match"}
+    # the query that went out carried the commitment, a reduced ttl, the path so far and
+    # the query id that every proof is bound to
+    assert calls[0]["body"] == {"commitment": target, "ttl": 2, "path": ["node-a"],
+                                "query_id": r["query_id"]}
+    # a result carries a path, a confidence and whether its proof stands up; nothing about
+    # what was found. These answers are unsigned, so they arrive unproven.
+    assert set(near) <= {"node_id", "path", "degree", "confidence", "match", "proven", "proof_problems"}
+    assert near["proven"] is False
 
 
 def test_results_below_the_confidence_floor_are_dropped(client, node_a, admin, monkeypatch):

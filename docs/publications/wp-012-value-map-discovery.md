@@ -5,7 +5,7 @@
 **Date:** September 2026  
 **Author:** Alex Nikolov  
 **Builds on:** [WP-001](wp-001-network-value.md) (six degrees), [WP-005](wp-005-six-degree-network-ledger.md) (graph settlement), [WP-010](wp-010-bridge-wallet-participation-funding.md), [WP-011](wp-011-value-assurance-future-proofing.md)  
-**Implementation status:** all six steps of §10 are **built** ([Value Map API](../implementation/value-map-api.md)), and a committed introduction now becomes a WP-010 contribution or supplier agreement. What remains open is named there: path proofs, cross-node identity, and reciprocity for carrying queries.
+**Implementation status:** all six steps of §10 are **built**, with path proofs ([Value Map API](../implementation/value-map-api.md)): a match is signed by the node that holds it, every relay signs the link it passes on, and the asker verifies the chain. What remains open is named there, and turns on carrying connections as signed objects.
 
 ---
 
@@ -242,7 +242,8 @@ Each step is useful on its own, and none of them requires a central registry.
 - **How coarse should attributes be?** Too fine and commitments become a catalogue; too coarse and matches are useless. This needs testing on real data, not argument.
 - **Who pays for forwarding?** Queries cost something to carry. Reciprocity may be enough at small scale; it may not be at large.
 - **What is the right k for suppression?** It depends on how sparse a region's nodes are, and sparse regions are exactly where discovery matters most.
-- **Should paths be provable?** A cryptographic path proof stops intermediaries inventing degrees, at the cost of complexity.
+- **Should paths be provable?** Yes, and they now are: the node holding a match signs it, every relay signs the link it passes on, and the asker verifies the chain. An intermediary cannot claim a match it does not hold, nor appear closer than it is ([Value Map API](../implementation/value-map-api.md)). It can still pad a path with nodes of its own, which only makes it look further away.
+- **Do the last gaps close in the protocol, or in the objects?** Cross-node identity and reciprocity for carrying look like protocol problems and are not. They close when connections are **signed, portable objects**: an edge carrying its own identity, terms and provenance can name a counterpart no local account vouches for, and a hop's carrying can be recorded as an object that settles later rather than depending on goodwill. `profile` is a field precisely so a deployment can carry such objects through the same endpoints.
 - **How do maps relate to registries?** Land registries, company registers and carbon registries are authoritative for parts of this graph. Reading them is straightforward; reconciling disagreement is not.
 
 ---

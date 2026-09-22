@@ -7,6 +7,11 @@
 **Builds on:** [WP-007](wp-007-hybrid-integration-payment-rails.md) (hybrid settlement), [WP-008](wp-008-value-discovery-knowledge-vector.md) (the knowledge vector), [WP-010](wp-010-bridge-wallet-participation-funding.md) (the bridge wallet), [WP-011](wp-011-value-assurance-future-proofing.md) (evidenced value), [WP-012](wp-012-value-map-discovery.md) (discovery)  
 **Implementation:** demonstration 2 is **built** — an agent paying under a mandate, producing a signed `can.transaction.v1` object (§5). The object machinery is in the [Value Map](../implementation/value-map-api.md) and [Agent](../implementation/agent-integration-api.md) APIs; real settlement adapters and offline state remain placeholders.
 
+!!! tip "Start concrete"
+    [What travels with the money](../in-practice.md#2-what-travels-with-the-money), and
+    [an agent that spends and is refused](../in-practice.md#3-an-agent-that-spends-and-is-refused) —
+    demonstration 2, built. Code: [bridge wallet](../implementation/wp-010-bridge-wallet.md).
+
 ---
 
 ## Abstract

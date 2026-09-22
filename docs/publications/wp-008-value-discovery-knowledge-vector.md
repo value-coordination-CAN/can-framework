@@ -5,6 +5,12 @@
 **Date:** September 2026  
 **Author:** Alex Nikolov  
 
+!!! tip "Start concrete"
+    A payment that carries why and against what, rather than only how much:
+    [CAN in Practice §2](../in-practice.md#2-what-travels-with-the-money) shows the document a payment carries,
+    field by field, and what a counterparty can verify without trusting the sender.
+    The transaction profile that implements it is in [WP-013](wp-013-trusted-transaction-objects.md).
+
 ---
 
 ## Abstract

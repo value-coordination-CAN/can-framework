@@ -6,6 +6,11 @@
 **Author:** Alex Nikolov  
 **Reference implementation:** [WP-011 Value Assurance: code and UI](../implementation/wp-011-value-assurance.md)
 
+!!! tip "Start concrete"
+    Code and UI, including the browser interface where a person holds their own keys and grants an agent
+    its mandate: [WP-011 Value Assurance](../implementation/wp-011-value-assurance.md).
+    What an assurance loop is bounded by, in practice: [CAN in Practice §3](../in-practice.md#3-an-agent-that-spends-and-is-refused).
+
 ---
 
 ## Abstract

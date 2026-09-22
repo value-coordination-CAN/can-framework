@@ -18,6 +18,14 @@ from app.core.auth import (
 from app.core.config import settings
 from app.db.models import User
 from app.db.session import get_db
+from app.bridge.models import Project
+from app.value.agreements import (
+    AGREEMENT_PROFILE,
+    AgreementRecord,
+    build_agreement_document,
+    link_locally,
+)
+from app.value.documents import trusted_nodes, verify_document
 from app.value.forwarding import (
     check_peer_rate,
     commitment_fingerprint,
@@ -491,6 +499,145 @@ def commit_introduction(intro_id: str, payload: CommitIn, db: Session = Depends(
     except ValueError as e:
         raise HTTPException(status_code=409, detail=str(e))
     return _intro_out(intro, mine=True)
+
+
+class AgreementIn(BaseModel):
+    kind: str = Field(..., pattern="^(contribution|supply|access)$")
+    terms: str = Field(..., min_length=1, max_length=5000, description="What was agreed, in words")
+    value: float | None = Field(default=None, ge=0, description="What it is worth, if you have valued it")
+    currency: str | None = Field(default=None, pattern="^[A-Z]{3}$")
+    # Both parties on this node? Then it can become a stake straight away.
+    project_id: str | None = None
+    counterpart_user_id: str | None = None
+    source_type: str | None = Field(default=None, description="For a contribution: overrides the default")
+    cash_share: float = Field(1.0, ge=0, le=1, description="For a supply agreement")
+
+
+class AgreementLinkIn(BaseModel):
+    project_id: str
+    counterpart_user_id: str
+    source_type: str | None = None
+    cash_share: float = Field(1.0, ge=0, le=1)
+
+
+def _agreement_out(rec: AgreementRecord) -> dict:
+    return {
+        "id": rec.id, "created_at": rec.created_at, "correlation_id": rec.correlation_id,
+        "introduction_id": rec.introduction_id, "kind": rec.kind, "terms": rec.terms,
+        "offer": rec.offer, "value": rec.value, "currency": rec.currency,
+        "counterpart_node": rec.counterpart_node, "counterpart_contact": rec.counterpart_contact,
+        "status": rec.status, "linked_type": rec.linked_type, "linked_id": rec.linked_id,
+        "project_id": rec.project_id, "document": rec.document,
+    }
+
+
+@router.post("/introductions/{intro_id}/agreement", status_code=201)
+def record_agreement(intro_id: str, payload: AgreementIn, db: Session = Depends(get_db),
+                     me: User = Depends(get_current_user), principal=Depends(get_current_principal)):
+    """Turn a committed introduction into a record — and, where both parties are here, into
+    a WP-010 contribution or supplier agreement, so the work earns a stake rather than goodwill."""
+    intro = db.get(Introduction, intro_id)
+    if not intro:
+        raise HTTPException(status_code=404, detail="introduction not found")
+    my_items = {i.id for i in db.query(MapItem.id).filter(MapItem.holder_user_id == me.id)}
+    is_party = intro.requested_by == principal["sub"] or bool(set(intro.candidate_items or []) & my_items)
+    if not (is_party or has_any_role(principal, ROLE_ADMIN)):
+        raise HTTPException(status_code=403, detail="only a party to the introduction can record what was agreed")
+    if intro.status != "accepted" or intro.commit_status != "committed":
+        raise HTTPException(status_code=409,
+                            detail="record an agreement once the far end has accepted and the near side has committed")
+
+    far_end = intro.path[-1] if intro.role == "origin" else intro.path[0]
+    rec = AgreementRecord(
+        correlation_id=intro.correlation_id, introduction_id=intro.id, kind=payload.kind,
+        terms=payload.terms, offer=intro.offer, value=payload.value, currency=payload.currency,
+        recorded_by=principal["sub"],
+        counterpart_node=None if far_end == settings.NODE_ID else far_end,
+        counterpart_contact=intro.reply_contact if intro.role == "origin" else intro.requester_contact,
+    )
+    db.add(rec)
+    db.flush()
+    rec.document = build_agreement_document(rec, parties={
+        "recorded_by_node": settings.NODE_ID, "counterpart_node": rec.counterpart_node,
+        "introduction": intro.correlation_id,
+    })
+    db.commit()
+    db.refresh(rec)
+
+    created = None
+    if payload.project_id and payload.counterpart_user_id:
+        project = db.get(Project, payload.project_id)
+        counterpart = db.get(User, payload.counterpart_user_id)
+        if not project or not counterpart:
+            raise HTTPException(status_code=404, detail="project or counterpart not found here")
+        try:
+            created = link_locally(db, rec, project=project, counterpart=counterpart, caller=me,
+                                   source_type=payload.source_type, cash_share=payload.cash_share)
+        except PermissionError as e:
+            raise HTTPException(status_code=403, detail=str(e))
+        except ValueError as e:
+            raise HTTPException(status_code=422, detail=str(e))
+
+    return {
+        "agreement": _agreement_out(rec),
+        "created": created,
+        "note": ("Recorded as a stake on this node." if created else
+                 "Recorded. Send the document to the other node; a stake is created there by a local party, "
+                 "deliberately, because a contributor needs an identity someone has vouched for."),
+    }
+
+
+@router.get("/agreements")
+def list_agreements(db: Session = Depends(get_db), me: User = Depends(get_current_user),
+                    principal=Depends(get_current_principal)):
+    q = db.query(AgreementRecord)
+    if not has_any_role(principal, ROLE_ADMIN, ROLE_AUDITOR):
+        q = q.filter(AgreementRecord.recorded_by == principal["sub"])
+    return [_agreement_out(r) for r in q.order_by(AgreementRecord.created_at.desc()).limit(200)]
+
+
+@router.post("/agreements/{agreement_id}/link")
+def link_agreement(agreement_id: str, payload: AgreementLinkIn, db: Session = Depends(get_db),
+                   me: User = Depends(get_current_user)):
+    """Attach an agreement recorded earlier, or received from another node, to a project here."""
+    rec = db.get(AgreementRecord, agreement_id)
+    if not rec:
+        raise HTTPException(status_code=404, detail="agreement not found")
+    project = db.get(Project, payload.project_id)
+    counterpart = db.get(User, payload.counterpart_user_id)
+    if not project or not counterpart:
+        raise HTTPException(status_code=404, detail="project or counterpart not found here")
+    try:
+        created = link_locally(db, rec, project=project, counterpart=counterpart, caller=me,
+                               source_type=payload.source_type, cash_share=payload.cash_share)
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    return {"agreement": _agreement_out(rec), "created": created}
+
+
+@router.post("/agreements/import", status_code=201)
+def import_agreement(document: dict, db: Session = Depends(get_db), me: User = Depends(get_current_user)):
+    """Take the other side's record of what was agreed. It is stored and verifiable; it does
+    not become a stake here until a local party attaches it to a project."""
+    report = verify_document(document, trusted_nodes())
+    if not report["valid"]:
+        raise HTTPException(status_code=422, detail={"message": "document does not verify", "report": report})
+    if document.get("header", {}).get("profile") != AGREEMENT_PROFILE:
+        raise HTTPException(status_code=422, detail="that is not an agreement document")
+    body = document.get("agreement") or {}
+    header = document["header"]
+    rec = AgreementRecord(
+        correlation_id=header.get("subject", {}).get("correlation_id", ""), kind=body.get("kind", "contribution"),
+        terms=body.get("terms", ""), offer=body.get("offer"), value=body.get("value"),
+        currency=body.get("currency"), recorded_by=me.subject or me.id,
+        counterpart_node=header.get("node_id"), document=document,
+    )
+    db.add(rec)
+    db.commit()
+    db.refresh(rec)
+    return {"agreement": _agreement_out(rec), "verification": report}
 
 
 @router.post("/peer/introduction/commit")

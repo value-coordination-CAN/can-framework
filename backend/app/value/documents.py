@@ -31,7 +31,8 @@ from app.value.models import Asset, AssetEvidence
 
 PROFILE = "can.value.v1"
 MAP_PROFILE = "can.map.v1"
-PROFILES = (PROFILE, MAP_PROFILE)
+AGREEMENT_PROFILE = "can.agreement.v1"
+PROFILES = (PROFILE, MAP_PROFILE, AGREEMENT_PROFILE)
 
 
 def _canon(obj) -> bytes:
@@ -177,11 +178,15 @@ def build_map_slice(db: Session, holder_user_id: str, items, assets, *,
 
 
 def document_root(doc: dict) -> str:
-    """Covers the header, every item hash (disclosed or withheld) and the valuation."""
+    """Covers the header, every item hash (disclosed or withheld) and every body section.
+
+    Anything a document asserts must be under the root, or it could be altered unnoticed.
+    """
     return _sha({
         "header": doc["header"],
         "items": sorted(i["hash"] for i in doc["items"]),
         "valuation": doc.get("valuation"),
+        "agreement": doc.get("agreement"),
     })
 
 

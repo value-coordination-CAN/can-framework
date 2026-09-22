@@ -30,6 +30,8 @@ from app.value.engine import current_evidence, gather_inputs, load_value_config,
 from app.value.models import Asset, AssetEvidence
 
 PROFILE = "can.value.v1"
+MAP_PROFILE = "can.map.v1"
+PROFILES = (PROFILE, MAP_PROFILE)
 
 
 def _canon(obj) -> bytes:
@@ -118,6 +120,62 @@ def build_document(db: Session, asset: Asset, access, *, disclose: set[str] | No
     return doc
 
 
+def _hashed_item(item_id: str, content: dict, *, disclose: bool) -> dict:
+    """One item of a document: content plus a salted hash, or the hash alone if withheld."""
+    salt = secrets.token_hex(8)
+    item = {"id": item_id, "salt": salt, "hash": _sha({"salt": salt, **content})}
+    return item | content if disclose else item | {"withheld": True}
+
+
+def build_map_slice(db: Session, holder_user_id: str, items, assets, *,
+                    include: set[str] | None = None, purpose: str | None = None) -> dict:
+    """A slice of this node's value map (WP-012 §3): the needs, capacities and assets the
+    holder chooses to share, hashed item by item so redaction still verifies."""
+    from app.value.engine import current_evidence, gather_inputs  # local import: avoids a cycle
+
+    doc_items = []
+    for it in items:
+        content = {
+            "record": "map_item", "item_type": it.item_type, "item_class": it.item_class,
+            "title": it.title, "description": it.description, "quantity": it.quantity, "unit": it.unit,
+            "region": it.region,
+            "available_from": it.available_from.isoformat() if it.available_from else None,
+            "available_until": it.available_until.isoformat() if it.available_until else None,
+            "asset_id": it.asset_id, "attributes": it.attributes, "status": it.status,
+        }
+        doc_items.append(_hashed_item(it.id, content, disclose=include is None or it.item_type in include))
+
+    for a in assets:
+        inputs = gather_inputs(current_evidence(db, a.id))
+        content = {
+            "record": "asset", "name": a.name, "kind": a.kind, "currency": a.currency,
+            "evidence_categories": sorted({i["category"] for i in inputs.values() if i["status"] != "missing"}),
+            "attested_inputs": sorted(k for k, i in inputs.items() if i["status"] == "attested"),
+        }
+        doc_items.append(_hashed_item(a.id, content, disclose=include is None or "asset" in include))
+
+    doc = {
+        "header": {
+            "profile": MAP_PROFILE,
+            "document_id": secrets.token_hex(16),
+            "issued_at": utcnow().isoformat(),
+            "node_id": settings.NODE_ID,
+            "subject": {"map_of": holder_user_id, "items": len(items), "assets": len(assets)},
+            "purpose": purpose,
+            "disclosed": sorted(include) if include else "all",
+        },
+        "items": doc_items,
+    }
+    doc["root"] = document_root(doc)
+    key = settings.NODE_SIGNING_KEY
+    if key:
+        sk = SigningKey(_unb64(key))
+        doc["signature"] = {"alg": "ed25519", "node_id": settings.NODE_ID,
+                            "public_key": _b64(bytes(sk.verify_key)),
+                            "value": _b64(sk.sign(doc["root"].encode()).signature)}
+    return doc
+
+
 def document_root(doc: dict) -> str:
     """Covers the header, every item hash (disclosed or withheld) and the valuation."""
     return _sha({
@@ -130,7 +188,7 @@ def document_root(doc: dict) -> str:
 def verify_document(doc: dict, trusted_nodes: dict[str, str] | None = None) -> dict:
     """Check a document without trusting whoever handed it over."""
     problems: list[str] = []
-    if doc.get("header", {}).get("profile") != PROFILE:
+    if doc.get("header", {}).get("profile") not in PROFILES:
         problems.append(f"unknown profile {doc.get('header', {}).get('profile')!r}")
 
     disclosed, withheld, bad_items = 0, 0, []
@@ -139,8 +197,7 @@ def verify_document(doc: dict, trusted_nodes: dict[str, str] | None = None) -> d
             withheld += 1
             continue
         disclosed += 1
-        content = {k: item.get(k) for k in
-                   ("category", "key", "value", "unit", "text", "evidence_ref", "recorded_at", "attested", "attester")}
+        content = {k: v for k, v in item.items() if k not in {"id", "salt", "hash", "withheld"}}
         if _sha({"salt": item.get("salt"), **content}) != item.get("hash"):
             bad_items.append(item.get("id"))
     if bad_items:

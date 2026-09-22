@@ -26,7 +26,7 @@ class InputDef:
     default: float | None = None
 
 
-@dataclass(frozen=True)
+@dataclass  # not frozen: a deployment or a test may tighten a threshold at runtime
 class ValueConfig:
     categories: tuple[str, ...]
     inputs: dict[str, InputDef]
@@ -34,6 +34,7 @@ class ValueConfig:
     default_mandate: dict
     maintenance: dict
     exchange: dict
+    discovery: dict
 
 
 @lru_cache
@@ -70,6 +71,7 @@ def load_value_config(config_dir: str | None = None) -> ValueConfig:
         default_mandate=raw.get("default_mandate", {}),
         maintenance=raw.get("maintenance", {"stale_evidence_days": 180, "reassess_after_days": 30, "min_confidence": 0.6}),
         exchange=raw.get("exchange", {"trusted_nodes": {}}),
+        discovery=raw.get("discovery", {"k_anonymity": 2, "epoch_days": 7, "max_queries_per_hour": 120}),
     )
 
 

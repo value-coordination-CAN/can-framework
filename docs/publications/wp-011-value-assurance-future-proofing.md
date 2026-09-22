@@ -4,6 +4,7 @@
 **Version:** 0.1  
 **Date:** September 2026  
 **Author:** Alex Nikolov  
+**Reference implementation:** [WP-011 Value Assurance: code and UI](../implementation/wp-011-value-assurance.md)
 
 ---
 

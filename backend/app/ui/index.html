@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CAN Value Assurance</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <span class="mark" aria-hidden="true">◆</span>
+    <div>
+      <h1>Value Assurance</h1>
+      <p class="sub">CAN reference UI · WP-011: verifying and future-proofing value in transition</p>
+    </div>
+  </div>
+  <div id="whoami" class="whoami"></div>
+</header>
+
+<main>
+  <!-- Sign in -->
+  <section id="signin" class="card hidden">
+    <h2>Sign in</h2>
+    <p>CAN uses a <strong>decentralised identifier</strong> you hold yourself. This browser creates an Ed25519 key, keeps the private key in its own storage (it never leaves the device) and signs a one-time challenge.</p>
+    <div class="row">
+      <button id="btn-did" class="primary">Sign in with this browser's key</button>
+      <button id="btn-new-did" class="ghost">Use a new key</button>
+    </div>
+    <details class="more">
+      <summary>Use an access token instead (attesters, reviewers)</summary>
+      <p class="muted">Paste an OIDC access token, for example from the Keycloak test users.</p>
+      <div class="row"><input id="token-input" placeholder="eyJ…" autocomplete="off"><button id="btn-token">Use token</button></div>
+    </details>
+    <p id="signin-msg" class="msg"></p>
+  </section>
+
+  <!-- Create profile -->
+  <section id="profile" class="card hidden">
+    <h2>Create your CAN profile</h2>
+    <p>One profile per identity. Your email is visible only to you, reviewers and auditors.</p>
+    <form id="form-profile" class="grid2">
+      <label>Display name<input name="display_name" required maxlength="200"></label>
+      <label>Email<input name="email" type="email" required></label>
+      <div class="span2"><button class="primary">Create profile</button></div>
+    </form>
+    <p id="profile-msg" class="msg"></p>
+  </section>
+
+  <!-- Assets -->
+  <section id="assets" class="hidden">
+    <div class="layout">
+      <aside class="card side">
+        <h2>Assets</h2>
+        <div id="asset-list" class="list"></div>
+        <h3>New asset</h3>
+        <form id="form-asset">
+          <label>Name<input name="name" required maxlength="200" placeholder="Harbour Court"></label>
+          <label>Kind<input name="kind" required maxlength="100" placeholder="residential"></label>
+          <label>Currency<input name="currency" value="USD" pattern="[A-Z]{3}" maxlength="3"></label>
+          <label class="check"><input type="checkbox" name="example" checked> Add example evidence</label>
+          <button class="primary">Create asset</button>
+        </form>
+        <h3>My data</h3>
+        <p class="muted small">Your user id (share it so others can grant you access): <code id="my-id"></code></p>
+        <button id="btn-export" class="ghost">Download everything held about me</button>
+      </aside>
+
+      <div id="asset-view" class="stack">
+        <div class="card empty">
+          <h2>Price is a number. Value is information in motion.</h2>
+          <p>Each asset carries the evidence behind its value: identity, condition, revenue, assumptions, carbon and contribution. From that evidence the model calculates a value, tests it against stress scenarios and shows where value would turn into liability. An agent keeps it current, but only within the mandate you give it.</p>
+          <p class="muted">Create an asset or pick one on the left.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<template id="tpl-asset">
+  <div class="card head">
+    <div>
+      <h2 data-f="name"></h2>
+      <p class="muted"><span data-f="kind"></span> · <span data-f="access"></span></p>
+    </div>
+    <div class="head-actions">
+      <button data-act="refresh" class="ghost">Refresh</button>
+      <button data-act="run" class="primary">Run assurance agent</button>
+    </div>
+  </div>
+
+  <div class="card valuation" data-part="valuation"></div>
+
+  <div class="card" data-part="loop-card">
+    <h3>Assurance loop</h3>
+    <p class="muted small">Detect → interpret → recalculate → explain → act. The agent can only raise alerts and requests, and only within your mandate. It never moves value.</p>
+    <ol class="loop" data-part="loop"><li class="muted">Run the agent to see the latest pass.</li></ol>
+    <div data-part="actions"></div>
+    <details class="more"><summary>Previous runs</summary><div data-part="runs"></div></details>
+  </div>
+
+  <div class="card">
+    <h3>Evidence</h3>
+    <div data-part="evidence"></div>
+    <form data-part="form-evidence" class="grid3">
+      <label>Input or key<select name="key"></select></label>
+      <label class="custom hidden">Custom key<input name="custom_key" maxlength="100"></label>
+      <label>Category<select name="category"></select></label>
+      <label>Value<input name="value" type="number" step="any"></label>
+      <label>Note<input name="text" maxlength="5000"></label>
+      <label>Evidence reference<input name="evidence_ref" maxlength="500" placeholder="rent roll 2026-09, meter data…"></label>
+      <div class="span3 row"><button class="primary">Record evidence</button><span class="muted small">Your own entries are marked self-reported. Attesters add attested evidence.</span></div>
+    </form>
+  </div>
+
+  <div class="grid-2">
+    <div class="card" data-part="mandate-card">
+      <h3>Agent mandate</h3>
+      <form data-part="form-mandate">
+        <label class="check"><input type="checkbox" name="enabled"> Mandate active</label>
+        <label>Alert if value falls more than (%)<input name="alert_drop_pct" type="number" min="0" max="100" step="0.5"></label>
+        <label>Request attestation below confidence (0–1)<input name="min_confidence" type="number" min="0" max="1" step="0.05"></label>
+        <label class="check"><input type="checkbox" name="flag_liability"> Flag when value turns into liability</label>
+        <fieldset><legend>Allowed actions</legend>
+          <label class="check"><input type="checkbox" name="act_alert"> Alert</label>
+          <label class="check"><input type="checkbox" name="act_request_attestation"> Request attestation</label>
+          <label class="check"><input type="checkbox" name="act_request_review"> Request human review</label>
+        </fieldset>
+        <button class="primary">Save mandate</button>
+      </form>
+    </div>
+    <div class="card" data-part="share-card">
+      <h3>Selective disclosure</h3>
+      <p class="muted small">Share chosen categories with a co-investor, lender or auditor. They see only what you share.</p>
+      <form data-part="form-share">
+        <label>Their user id<input name="grantee_user_id" required></label>
+        <div class="cats" data-part="share-cats"></div>
+        <button class="primary">Share</button>
+      </form>
+      <div data-part="shares"></div>
+    </div>
+  </div>
+</template>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script src="app.js"></script>
+</body>
+</html>

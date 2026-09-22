@@ -1,0 +1,60 @@
+# WP-011 Value Assurance: reference valuation model, evidence categories and stress scenarios.
+# Everything here is public and versioned so any holder, co-investor or auditor can
+# reproduce a valuation from the same evidence.
+
+value_assurance:
+  # Evidence categories an asset can carry (WP-011, section 1).
+  categories:
+    - identity      # what exactly is owned, title, encumbrances
+    - condition     # delivery, progress, cost to complete
+    - revenue       # verified occupancy, output, trading
+    - assumption    # inputs behind the value, written down rather than implied
+    - carbon        # emissions, capture, credits
+    - contribution  # who helped create and sustain the value
+
+  # Reference model: income approach.
+  #   NOI   = units x occupancy x rent_per_unit_month x 12 x (1 - opex_ratio)
+  #           - carbon_tonnes_year x carbon_price
+  #   value = NOI / cap_rate - capex_to_complete
+  # A negative value means the asset costs more to hold than it earns: value has become liability.
+  model: income
+  inputs:
+    units:                {category: identity,   required: true,  min: 0,     weight: 0.10, label: "Units (lettable units, rooms, bays)"}
+    occupancy:            {category: revenue,    required: true,  min: 0,     max: 1, weight: 0.25, label: "Occupancy (0-1)"}
+    rent_per_unit_month:  {category: revenue,    required: true,  min: 0,     weight: 0.25, label: "Rent per unit per month"}
+    opex_ratio:           {category: assumption, required: true,  min: 0,     max: 1, weight: 0.15, label: "Operating cost ratio (0-1)"}
+    cap_rate:             {category: assumption, required: true,  min: 0.005, max: 1, weight: 0.15, label: "Capitalisation rate (0-1)"}
+    capex_to_complete:    {category: condition,  required: false, min: 0,     default: 0, weight: 0.05, label: "Capital cost to complete"}
+    carbon_tonnes_year:   {category: carbon,     required: false, min: 0,     default: 0, weight: 0.03, label: "Emissions, tonnes CO2e per year"}
+    carbon_price:         {category: assumption, required: false, min: 0,     default: 0, weight: 0.02, label: "Carbon price per tonne"}
+
+  # Stress scenarios (WP-011, section 4). Operations: mul (multiply) or add.
+  scenarios:
+    wage_shock:
+      label: "Wage-funded demand falls (moderate AI displacement)"
+      changes: {occupancy: {mul: 0.85}, rent_per_unit_month: {mul: 0.90}}
+    severe_wage_shock:
+      label: "Severe displacement: labour income falls sharply"
+      changes: {occupancy: {mul: 0.70}, rent_per_unit_month: {mul: 0.80}}
+    energy_carbon_shock:
+      label: "Energy price and carbon cost shock"
+      changes: {opex_ratio: {add: 0.08}, carbon_price: {mul: 2.0, add: 50}}
+    rate_rise:
+      label: "Discount rates rise"
+      changes: {cap_rate: {add: 0.015}}
+    combined_stress:
+      label: "Combined: severe wage shock, energy shock and rate rise"
+      changes:
+        occupancy: {mul: 0.70}
+        rent_per_unit_month: {mul: 0.80}
+        opex_ratio: {add: 0.08}
+        carbon_price: {mul: 2.0, add: 50}
+        cap_rate: {add: 0.015}
+
+  # Defaults for a holder's agent mandate (WP-011, section 3). Holders set their own.
+  default_mandate:
+    enabled: false
+    alert_drop_pct: 10        # alert if base value falls more than this vs the previous run
+    min_confidence: 0.6       # request attestation if evidence confidence is below this
+    flag_liability: true      # alert if any scenario turns value into liability
+    allowed_actions: [alert, request_attestation, request_review]

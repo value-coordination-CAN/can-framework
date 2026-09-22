@@ -64,6 +64,19 @@ Every care factor (health, parenting, burnout, age, crisis) is sensitive and is 
   **deletes** that factor's entries.
 - Not consenting never lowers anyone's priority.
 
+## Value Assurance (WP-011) and the reference UI
+
+`/value/*` implements WP-011: assets carry evidence, the public model in
+`ledgers/value_assurance.yaml` values them and runs stress scenarios, and an assurance
+agent (detect → interpret → recalculate → explain → act) acts only within the holder's
+mandate. It can raise alerts and requests, and never moves value. Holders can share
+chosen categories with others.
+
+The reference UI is served at **http://localhost:8000/ui/**. The browser creates an Ed25519
+key for DID sign-in and keeps the private key in its own storage.
+
+Full description: [docs/implementation/wp-011-value-assurance.md](../docs/implementation/wp-011-value-assurance.md).
+
 ## Main endpoints
 
 | Method | Path | Who |

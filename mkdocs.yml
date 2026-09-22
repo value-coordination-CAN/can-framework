@@ -25,7 +25,9 @@ nav:
       - WP-009: publications/wp-009-when-growth-cannot-compensate.md
       - WP-010: publications/wp-010-bridge-wallet-participation-funding.md
       - WP-011: publications/wp-011-value-assurance-future-proofing.md
-      
+  - Implementations:
+      - WP-011 Value Assurance: implementation/wp-011-value-assurance.md
+
   - Policy:
       - Overview: about/POLICY_ABOUT.md
       - Regulators: about/FOR_REGULATORS.md

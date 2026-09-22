@@ -41,6 +41,14 @@ These documents define CAN’s governance, safeguards, technical architecture, a
 
 ---
 
+## Implementations
+
+Working code that turns the papers into infrastructure anyone can run and test.
+
+- 🛠️ [WP-011 Value Assurance](implementation/wp-011-value-assurance.md): evidenced asset value, stress scenarios, an agentic assurance loop bounded by the holder's mandate, selective disclosure, and a browser UI with self-held keys.
+
+---
+
 ## Latest Direction (September 2026)
 
 - **From price discovery to value discovery:** payments that carry a knowledge vector, not only a compressed number (WP-008).

@@ -1,5 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+
+from app.services.account import delete_account, export_account
 
 from app.core.auth import ROLE_USER, can_view_user, current_user_or_none, get_current_user, require_roles
 from app.db.models import User
@@ -28,6 +30,25 @@ def create_user(payload: UserCreate, db: Session = Depends(get_db), principal=De
 @router.get("/users/me", response_model=UserOut)
 def get_me(me: User = Depends(get_current_user)):
     return me
+
+
+@router.get("/users/me/export")
+def export_me(db: Session = Depends(get_db), me: User = Depends(get_current_user)):
+    """Right of access: everything held about you, as one JSON document."""
+    return export_account(db, me)
+
+
+@router.delete("/users/me")
+def delete_me(
+    confirm: bool = Query(False, description="Must be true: deletion cannot be undone"),
+    db: Session = Depends(get_db),
+    me: User = Depends(get_current_user),
+):
+    """Right to withdrawal: delete your profile and all data about you. Records that belong to
+    other people (entries you attested, decisions you made) keep a pseudonym instead of your identity."""
+    if not confirm:
+        raise HTTPException(status_code=400, detail="pass confirm=true to delete your account; this cannot be undone")
+    return {"deleted": True, "counts": delete_account(db, me)}
 
 
 @router.get("/users/{user_id}")

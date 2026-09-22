@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 
 from app.core.time import utcnow
-from app.db.models import CareConsent, LedgerEntry
+from app.db.models import CareConsent, EntryDispute, LedgerEntry
 from app.services.ledger_config import load_ledger_config
 
 
@@ -40,11 +40,18 @@ def set_care_consent(db: Session, user_id: str, factors: set[str]) -> dict:
         if f not in factors and row.revoked_at is None:
             row.revoked_at = now
             revoked.append(f)
-            deleted += db.query(LedgerEntry).filter(
+            factor_entries = db.query(LedgerEntry.id).filter(
                 LedgerEntry.user_id == user_id,
                 LedgerEntry.ledger_type == "care",
                 LedgerEntry.metric == f,
-            ).delete(synchronize_session=False)
+            )
+            ids = [e.id for e in factor_entries]
+            if ids:
+                db.query(EntryDispute).filter(EntryDispute.entry_id.in_(ids)).delete(synchronize_session=False)
+                db.query(LedgerEntry).filter(LedgerEntry.id.in_(ids)).update(
+                    {LedgerEntry.supersedes_id: None}, synchronize_session=False
+                )
+                deleted += db.query(LedgerEntry).filter(LedgerEntry.id.in_(ids)).delete(synchronize_session=False)
     db.commit()
     return {
         "consented_factors": sorted(active_consented_factors(db, user_id)),

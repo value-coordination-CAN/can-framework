@@ -34,6 +34,39 @@ class LedgerEntry(Base):
     # Who recorded it. Self-reported entries are kept but do not count towards priority.
     attester_subject: Mapped[str | None] = mapped_column(String(400), nullable=True)
     self_reported: Mapped[bool] = mapped_column(Boolean, default=True)
+    # Corrections never overwrite: the old entry is superseded (and stops counting),
+    # and a corrected entry points back at it.
+    superseded_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    superseded_reason: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    supersedes_id: Mapped[str | None] = mapped_column(String, ForeignKey("ledger_entries.id"), nullable=True)
+
+    @property
+    def status(self) -> str:
+        return "superseded" if self.superseded_at is not None else "active"
+
+
+class EntryDispute(Base):
+    """A person disputes an entry recorded about them (right to correction)."""
+    __tablename__ = "entry_disputes"
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    entry_id: Mapped[str] = mapped_column(String, ForeignKey("ledger_entries.id"), index=True)
+    user_id: Mapped[str] = mapped_column(String, ForeignKey("users.id"), index=True)
+    reason: Mapped[str] = mapped_column(Text)
+    proposed_value: Mapped[float | None] = mapped_column(Float, nullable=True)
+    status: Mapped[str] = mapped_column(String(50), default="open")  # open|corrected|removed|rejected
+    resolved_by: Mapped[str | None] = mapped_column(String(400), nullable=True)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    resolution_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    corrected_entry_id: Mapped[str | None] = mapped_column(String, ForeignKey("ledger_entries.id"), nullable=True)
+
+
+class DeletionRecord(Base):
+    """Audit trace of an account deletion. Holds counts only, no personal data."""
+    __tablename__ = "deletion_records"
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    deleted_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    counts: Mapped[dict] = mapped_column(JSON)
 
 
 class CareConsent(Base):

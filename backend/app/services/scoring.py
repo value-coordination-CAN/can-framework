@@ -10,7 +10,7 @@ from collections import defaultdict
 
 from sqlalchemy.orm import Session
 
-from app.db.models import LedgerEntry, ScoreSnapshot
+from app.db.models import EntryDispute, LedgerEntry, ScoreSnapshot
 from app.services.care_consent import active_consented_factors
 from app.services.ledger_config import load_ledger_config
 
@@ -59,8 +59,16 @@ def _ledger_breakdown(entries, ledger_def, self_weight: float, allowed_metrics=N
 def compute_score(db: Session, user_id: str) -> dict:
     cfg = load_ledger_config()
     entries_by_ledger = defaultdict(list)
-    for e in db.query(LedgerEntry).filter(LedgerEntry.user_id == user_id).all():
+    active = db.query(LedgerEntry).filter(
+        LedgerEntry.user_id == user_id,
+        LedgerEntry.superseded_at.is_(None),  # corrected or removed entries no longer count
+    ).all()
+    for e in active:
         entries_by_ledger[e.ledger_type].append(e)
+    under_dispute = {
+        d.entry_id
+        for d in db.query(EntryDispute).filter(EntryDispute.user_id == user_id, EntryDispute.status == "open")
+    }
 
     self_w = cfg.scoring.self_reported_weight
     contribution = _ledger_breakdown(entries_by_ledger["contribution"], cfg.ledgers["contribution"], self_w)
@@ -88,7 +96,9 @@ def compute_score(db: Session, user_id: str) -> dict:
         "care_uplift": round(uplift, 6),
         "overall": overall,
         "self_reported_weight": self_w,
+        "entries_under_dispute": sum(1 for e in active if e.id in under_dispute),
         "notes": [
+            "Entries under dispute keep counting until an independent reviewer resolves the dispute.",
             "Only attested entries count unless self_reported_weight is above 0.",
             "Sensitive care factors count only with your explicit consent, which you can revoke.",
             "You can appeal any allocation decision based on this score.",

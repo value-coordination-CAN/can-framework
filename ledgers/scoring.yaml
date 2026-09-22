@@ -1,0 +1,11 @@
+# How ledger scores combine into allocation priority.
+# overall = sum(base_weights[ledger] * ledger_score) + care_uplift * care_score
+# All ledger values are normalised to 0..1, so the base part is 0..1 and care adds at most care_uplift.
+scoring:
+  base_weights:
+    contribution: 0.5
+    reliability: 0.5
+  # Care can only raise priority. Not consenting to care factors never lowers anyone's priority.
+  care_uplift: 0.2
+  # Self-reported entries are kept for the person's own record but do not count towards priority.
+  self_reported_weight: 0.0

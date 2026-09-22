@@ -29,6 +29,10 @@ services:
   api:
     build: .
     env_file: .env
+    environment:
+      LEDGER_CONFIG_DIR: /ledgers
+    volumes:
+      - ../ledgers:/ledgers:ro
     ports:
       - "8000:8000"
     depends_on:

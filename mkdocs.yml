@@ -26,6 +26,7 @@ nav:
       - WP-010: publications/wp-010-bridge-wallet-participation-funding.md
       - WP-011: publications/wp-011-value-assurance-future-proofing.md
       - WP-012: publications/wp-012-value-map-discovery.md
+      - WP-013: publications/wp-013-trusted-transaction-objects.md
   - Implementations:
       - Agent Integration API: implementation/agent-integration-api.md
       - Working API (value, search, exchange): implementation/agent-work-api.md

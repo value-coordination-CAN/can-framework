@@ -17,7 +17,7 @@ This is the interface an AI or software agent uses to take part in CAN. It exist
 2. **Every agent answers to a named steward.** No steward, no write access.
 3. **Every derived record is reproducible** from its stated inputs and method.
 4. **A record that fails recomputation is superseded automatically.**
-5. **Writes pause when the unreviewed queue is full.** The queue stops; the review is never skipped.
+5. **Writes pause when the unreviewed queue is full.** The queue stops; the review is never skipped. Ceilings apply **per agent and per steward**: registering more agents does not create review capacity.
 6. **Agents may hold mandates. They never hold entitlements** to what people need.
 
 The rules themselves live in [`ledgers/agents.yaml`](https://github.com/value-coordination-CAN/can-framework/blob/main/ledgers/agents.yaml): record kinds, scopes, limits and holdings, versioned in public.
@@ -42,7 +42,7 @@ Authorization: Bearer <the steward's token>
 }
 ```
 
-A DID that belongs to a person's profile cannot be registered as an agent, and a DID can only be registered once.
+A DID that belongs to a person's profile cannot be registered as an agent, and a DID can only be registered once. A steward may hold at most `max_agents_per_steward` agents (5 by default); revoking one frees a place. The limit exists because a steward who runs ten agents has not multiplied what they can actually review.
 
 **Scopes**
 
@@ -98,7 +98,7 @@ The server stores canonical SHA-256 hashes of `inputs` and `output`, so the clai
 | --- | --- |
 | `403` | Outside the agent's scopes, or the agent is suspended, revoked or has no steward |
 | `422` | Unknown kind, or inputs larger than the limit (reference records instead of copying them) |
-| `429` | The unreviewed queue is full, or the hourly rate is reached. **Wait; do not retry around it** |
+| `429` | The agent's or the steward's unreviewed queue is full, or the hourly rate is reached. **Wait; do not retry around it** |
 
 ---
 
@@ -126,10 +126,21 @@ Reviewers, admins and the agent's own steward can review. Each review moves a re
 
 ```http
 GET /agents/me/queue
-{ "unreviewed": 50, "ceiling": 50, "remaining": 0, "writes_paused": true }
+{
+  "unreviewed": 12, "ceiling": 50, "remaining": 38, "writes_paused": false,
+  "steward": { "unreviewed": 100, "ceiling": 100, "remaining": 0,
+               "writes_paused": true, "agents": 3, "max_agents": 5 }
+}
 ```
 
-An agent should check this before a batch. When the ceiling is reached, writes stop rather than the backlog growing past what anyone can read.
+There are **two ceilings**, and either one pauses writes:
+
+| Ceiling | Default | Why |
+| --- | --- | --- |
+| Per agent (`max_unreviewed_records`) | 50 | One agent cannot flood the queue |
+| Per steward (`max_unreviewed_per_steward`) | 100 | The person who answers for the agents has one pair of eyes, however many agents they run |
+
+An agent should check this before a batch. A steward can see what they owe across all their agents at `GET /agents/steward/queue`. When either ceiling is reached, writes stop rather than the backlog growing past what anyone can read.
 
 ---
 
@@ -161,7 +172,8 @@ Revoking or suspending takes effect immediately: live agent sessions are ended i
 | GET | `/agents/`, `/agents/{id}` | the steward; reviewers, admins and auditors |
 | PATCH | `/agents/{id}` | the steward (or an admin): scopes, ceiling, contact, status |
 | POST | `/agents/auth/verify` | the agent, with a signed challenge |
-| GET | `/agents/me/queue` | the agent |
+| GET | `/agents/me/queue` | the agent (its own and its steward's ceilings) |
+| GET | `/agents/steward/queue` | a person: what they owe across every agent they steward |
 | POST | `/agents/records` | the agent, within its scopes and queue |
 | GET | `/agents/records`, `/agents/records/{id}` | anyone signed in |
 | POST | `/agents/records/{id}/review` | reviewer, admin or the agent's steward |
@@ -174,9 +186,9 @@ Revoking or suspending takes effect immediately: live agent sessions are ended i
 
 1. **Recompute-on-read for CAN's own engines**, so a valuation record can be checked by the server itself rather than by another party submitting a result.
 2. **Accreditation of agents per subject type**, the agent counterpart of attester accreditation.
-3. **Steward-level ceilings**, so one steward cannot register ten agents to multiply their throughput.
-4. **A public agent register**, so anyone affected by a derived record can find the steward without special access.
+3. **A public agent register**, so anyone affected by a derived record can find the steward without special access.
+4. **Organisational stewardship**: a review team rather than one person, with the ceiling set from that team's actual capacity.
 
-Item 3 matters: the current ceiling is per agent, and the throughput argument applies to stewards too.
+Steward-level ceilings, listed here as a gap when this page was first published, are now implemented.
 
 Tests: `backend/tests/test_agents.py` covers registration, sign-in, scope enforcement, hashing, recomputation matching and automatic supersession, the queue ceiling and its release by review, immediate revocation, and that an agent token cannot become a person or hold anything.

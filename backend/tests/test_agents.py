@@ -118,6 +118,60 @@ def test_writes_pause_when_the_queue_is_full(client):
     assert client.post("/agents/records", json=DERIVATION, headers=auth(token)).status_code == 201
 
 
+def test_steward_ceiling_is_shared_across_their_agents(client, monkeypatch):
+    """Registering more agents does not create review capacity."""
+    from app.agents import config as agent_config
+
+    rules = agent_config.load_agent_rules()
+    monkeypatch.setattr(rules, "max_unreviewed_per_steward", 3, raising=False)
+
+    _, steward = did_login(client)
+    create_profile(client, steward, "BusySteward")
+    tokens = []
+    for i in range(2):
+        did, sk = new_did()
+        assert register_agent(client, steward, did, max_unreviewed=10).status_code == 200
+        tokens.append(agent_sign_in(client, did, sk).json()["access_token"])
+
+    ids = []
+    for i in range(3):  # three records, spread across two agents
+        r = client.post("/agents/records", json={**DERIVATION, "statement": f"d{i}"}, headers=auth(tokens[i % 2]))
+        assert r.status_code == 201, r.text
+        ids.append(r.json()["id"])
+
+    # the second agent is well inside its own ceiling, but the steward's queue is full
+    blocked = client.post("/agents/records", json=DERIVATION, headers=auth(tokens[1]))
+    assert blocked.status_code == 429 and "steward" in blocked.json()["detail"]
+    q = client.get("/agents/me/queue", headers=auth(tokens[1])).json()
+    assert q["writes_paused"] is False and q["steward"]["writes_paused"] is True
+
+    sq = client.get("/agents/steward/queue", headers=auth(steward)).json()
+    assert sq["unreviewed"] == 3 and sq["agents"] == 2
+
+    client.post(f"/agents/records/{ids[0]}/review", json={"accept": True, "note": "checked"}, headers=auth(steward))
+    assert client.post("/agents/records", json=DERIVATION, headers=auth(tokens[1])).status_code == 201
+
+
+def test_a_steward_cannot_register_unlimited_agents(client, monkeypatch):
+    from app.agents import config as agent_config
+
+    rules = agent_config.load_agent_rules()
+    monkeypatch.setattr(rules, "max_agents_per_steward", 2, raising=False)
+
+    _, steward = did_login(client)
+    create_profile(client, steward, "Collector")
+    dids = [new_did() for _ in range(3)]
+    assert register_agent(client, steward, dids[0][0]).status_code == 200
+    second = register_agent(client, steward, dids[1][0])
+    assert second.status_code == 200
+    third = register_agent(client, steward, dids[2][0])
+    assert third.status_code == 403 and "limit per steward" in third.json()["detail"]
+
+    # revoking one frees a place
+    client.patch(f"/agents/{second.json()['id']}", json={"status": "revoked", "reason": "retired"}, headers=auth(steward))
+    assert register_agent(client, steward, dids[2][0]).status_code == 200
+
+
 def test_steward_can_revoke_immediately(client, agent):
     r = client.patch(f"/agents/{agent['agent']['id']}", json={"status": "revoked", "reason": "no longer needed"},
                      headers=auth(agent["steward"]))

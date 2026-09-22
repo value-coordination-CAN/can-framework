@@ -72,6 +72,8 @@ def rules():
             "max_unreviewed_records": r.max_unreviewed_records,
             "max_records_per_hour": r.max_records_per_hour,
             "max_input_bytes": r.max_input_bytes,
+            "max_unreviewed_per_steward": r.max_unreviewed_per_steward,
+            "max_agents_per_steward": r.max_agents_per_steward,
         },
         "holdings": r.holdings,
         "recomputation": {"on_mismatch": r.on_mismatch},
@@ -81,6 +83,7 @@ def rules():
             "Every derived record is reproducible from its stated inputs.",
             "A record that fails recomputation is superseded automatically.",
             "Writes pause when the unreviewed queue is full; the review is never skipped.",
+            "Ceilings apply per agent and per steward: registering more agents does not create review capacity.",
             "Agents may hold mandates. They never hold entitlements to what people need.",
         ],
     }
@@ -99,6 +102,10 @@ def register(payload: AgentRegister, db: Session = Depends(get_db), me: User = D
         raise HTTPException(status_code=409, detail="this DID is already registered")
     if db.query(User).filter(User.subject == payload.did).first():
         raise HTTPException(status_code=409, detail="this DID belongs to a person's profile, not an agent")
+    try:
+        service.check_can_register(db, me.id)
+    except service.AgentForbidden as e:
+        raise HTTPException(status_code=403, detail=str(e))
     a = Agent(steward_user_id=me.id, **payload.model_dump())
     db.add(a)
     db.commit()
@@ -191,8 +198,15 @@ def agent_verify(payload: AgentVerifyIn, db: Session = Depends(get_db)):
 
 @router.get("/me/queue")
 def my_queue(db: Session = Depends(get_db), agent: Agent = Depends(get_current_agent)):
-    """How much room is left before writes pause. Check this before a batch."""
+    """How much room is left before writes pause, for this agent and for its steward.
+    Check this before a batch."""
     return {"agent_id": agent.id, "scopes": agent.scopes, **service.queue_state(db, agent)}
+
+
+@router.get("/steward/queue")
+def steward_queue(db: Session = Depends(get_db), me: User = Depends(get_current_user)):
+    """What you have left to review across every agent you steward."""
+    return {"steward_user_id": me.id, **service.steward_queue_state(db, me.id)}
 
 
 # --- derived records ------------------------------------------------------------------

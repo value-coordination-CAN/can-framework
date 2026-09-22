@@ -39,6 +39,7 @@ These documents define CAN’s governance, safeguards, technical architecture, a
 - 📘 [WP-009: When Growth Cannot Compensate — Labour Displacement, Asset-Anchored Floors and Direct Value Access](publications/wp-009-when-growth-cannot-compensate.md)
 - 📘 [WP-010: The Bridge Wallet as Leverage — Funding Projects Through Participation and Access](publications/wp-010-bridge-wallet-participation-funding.md)
 - 📘 [WP-011: Value Assurance — Verifying and Future-Proofing Value in Transition](publications/wp-011-value-assurance-future-proofing.md)
+- 📘 [WP-012: The Value Map — Needs and Capacities on a Graph, Discovery Across Degrees, and Value That Travels](publications/wp-012-value-map-discovery.md)
 
 ---
 
@@ -59,6 +60,7 @@ Working code that turns the papers into infrastructure anyone can run and test.
 - **When growth cannot compensate:** floors anchored on assets and delivered as direct access to capacity, not only as cash (WP-009).
 - **The bridge as leverage:** one wallet for fiat, modernised fiat and direct value; projects funded through participation and access; suppliers with future-proofed profit (WP-010).
 - **Value assurance:** evidenced, continuously updated value for assets in transition (WP-011).
+- **The value map:** needs and capacities on a shareable graph; a need finds a capacity a few hops away, and value travels that path as access, contribution or a stake, turning capacity that exists into capacity people can use (WP-012).
 - **Safeguards:** neither 1984 nor The Hunger Games. The standing test: the person affected holds the record, sees the reasoning and can contest it.
 
 ---

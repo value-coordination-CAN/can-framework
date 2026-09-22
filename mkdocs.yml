@@ -25,6 +25,7 @@ nav:
       - WP-009: publications/wp-009-when-growth-cannot-compensate.md
       - WP-010: publications/wp-010-bridge-wallet-participation-funding.md
       - WP-011: publications/wp-011-value-assurance-future-proofing.md
+      - WP-012: publications/wp-012-value-map-discovery.md
   - Implementations:
       - Agent Integration API: implementation/agent-integration-api.md
       - Working API (value, search, exchange): implementation/agent-work-api.md

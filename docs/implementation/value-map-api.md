@@ -7,7 +7,7 @@
 
 Needs and capacities recorded on a node, shared as verifiable slices, and made findable by commitment without publishing a catalogue of what the node holds.
 
-**Built:** map items, slices, commitments, local matching, **peering and forwarding across hops**. **Not yet built:** consent-based introductions, so a match tells you a path exists and you still have to ask each hop yourself.
+**Built:** map items, slices, commitments, local matching, peering, forwarding across hops, and **introductions** — an offer that travels to the far end by itself, by several routes at once, where the far end decides and the near side then commits.
 
 ---
 
@@ -162,6 +162,53 @@ POST /map/peer/query      # peer-to-peer; signed envelope, no user account invol
 
 ---
 
+## 5b. Introductions: the offer travels, the far end decides, the near side commits
+
+A path tells you a match exists. An introduction is how the two ends actually meet.
+
+```http
+POST /map/introductions
+{ "paths": [["node-a","node-b","node-c"], ["node-a","node-d","node-c"]],
+  "item_type": "capacity", "item_class": "covered_workshop",
+  "region": "GCC-E", "period": "2027-Q1",
+  "message": "We need covered space for an 18-month refit.",
+  "offer": "Refit work in kind, or rent, whichever suits." }
+```
+
+Three things make this different from a ping:
+
+1. **It is an offer, not a request for attention.** `offer` is required and travels with the message. The far end decides knowing what is on the table.
+2. **It travels by itself, and by several routes at once.** Relays carry offers without being asked (`relay_policy: auto`). Give more than one route and the offer takes them all, so one hop cannot stop it. The same offer arriving twice is recognised and decided once.
+3. **The far end decides.** Only a holder of the matching items — or the node's operator — can answer. Accepting means choosing **how to be reached**, and optionally sharing a verifiable slice of exactly what they choose.
+
+```http
+POST /map/introductions/{id}/decision
+{ "accept": true, "reply_contact": "harbour@example.org", "share_items": ["…"] }
+```
+
+Then the near side stands behind its offer:
+
+```http
+POST /map/introductions/{id}/commit
+{ "contact": "boatbuilders@example.org", "note": "we will start in January" }
+```
+
+**The far end learns who it is dealing with only when the asker commits.** Until then it sees the offer and not the asker; after commitment, the contact travels up the route that worked.
+
+### Carrying builds connection value; not carrying is a missed chance
+
+| What happens | What it does |
+| --- | --- |
+| A peer carries an offer | `carried_count` rises |
+| An offer it carried ends in an acceptance | `connections_count` rises and its **trust weight increases** (`connection_weight_gain`, 0.05 by default) |
+| A peer will not carry, or cannot be reached | `missed_count` rises. **Nothing is deducted** |
+
+There is no penalty for refusing. A node that does not carry simply does not build weight, and because weight is what later paths are ranked by, traffic gradually flows through the nodes that connect people. Value flows where connection flows.
+
+A node may set `relay_policy: review` and decide each request by hand. It may; and a refusal is recorded **in its own name** (`blocked_by`), and travels back to the asker. Holding things up is a choice anyone can see.
+
+---
+
 ## 6. Endpoints
 
 | Method | Path | Who |
@@ -177,6 +224,10 @@ POST /map/peer/query      # peer-to-peer; signed envelope, no user account invol
 | POST/GET/PATCH/DELETE | `/map/peers[/{id}]` | the node operator (`can_admin`); auditors may read |
 | POST | `/map/peer/query` | a peered node, by signature; no user account |
 | GET | `/map/queries` | operator or auditor: what this node was asked, and by whom |
+| POST/GET | `/map/introductions` | any signed-in person or agent: make an offer, see yours and any waiting on you |
+| POST | `/map/introductions/{id}/decision` | the far end: a holder of the matching items (or the operator); a relay in review mode: the operator |
+| POST | `/map/introductions/{id}/commit` | the asker, once the far end has accepted |
+| POST | `/map/peer/introduction`, `/reply`, `/commit` | a peered node, by signature |
 
 ---
 
@@ -184,15 +235,15 @@ POST /map/peer/query      # peer-to-peer; signed envelope, no user account invol
 
 - **No listing of discoverable items.** Being findable is not the same as being published.
 - **No automatic introductions.** A match tells a searcher to ask. The holder decides whether to answer, and what slice to share.
-- **No automatic contact.** A path says a match exists and names the nodes in between. Reaching the far end still means asking each hop, and every one of them may refuse.
-- **No path proofs yet.** An intermediary could in principle misreport a degree; proofs are noted below.
-- **No scoring.** Nothing here ranks holders, and matching is on attributes, not on reputation.
+- **No contact without consent.** An offer travels on its own, but nobody's details do. The far end reveals contact only by accepting; the asker only by committing.
+- **No path proofs yet.** An intermediary could in principle misreport a degree.
+- **No scoring of people.** Connection value sits on **peer nodes**, from what they carried and connected. Nothing ranks holders, and matching is on attributes, never on reputation.
 
 ## 8. Next
 
-1. **Introductions**: a consent-based request carried along a path, ending in a shared slice or in nothing.
-2. **Path proofs**, so an intermediary cannot invent or shorten a degree.
-3. **Shared rate-limit storage**, since the current limiter is per process.
-4. **Reciprocity**: forwarding costs something to carry, and at scale that needs an answer.
+1. **Path proofs**, so an intermediary cannot invent or shorten a degree.
+2. **Shared rate-limit storage**, since the current limiter is per process.
+3. **Expiry sweeping**: offers past their time to live are treated as expired when read, but nothing clears them yet.
+4. **Turning a commitment into an agreement**: a committed introduction is the natural start of a project contribution or a supply agreement (WP-010), and could create one directly.
 
 Tests: `backend/tests/test_value_map.py` covers recording items, opt-in discoverability, commitment formation matching between holder and searcher, match and no-match answers carrying no contents, k-anonymity suppressing a single-item match, rate limiting, local matching by count, slice verification, redaction that still verifies, tamper detection, and the refusal to share what is not yours.

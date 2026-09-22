@@ -6,7 +6,15 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
 from app.agents.auth import ROLE_AGENT
-from app.core.auth import ROLE_ADMIN, ROLE_AUDITOR, ROLE_USER, get_current_user, require_any_role
+from app.core.auth import (
+    ROLE_ADMIN,
+    ROLE_AUDITOR,
+    ROLE_USER,
+    get_current_principal,
+    get_current_user,
+    has_any_role,
+    require_any_role,
+)
 from app.core.config import settings
 from app.db.models import User
 from app.db.session import get_db
@@ -16,6 +24,15 @@ from app.value.forwarding import (
     search,
     seal_confidences,
     verify_request,
+)
+from app.value.introductions import (
+    Introduction,
+    commit_offer,
+    decide,
+    receive,
+    receive_commit,
+    receive_reply,
+    start,
 )
 from app.value.peer_models import Peer, QueryLog
 from app.value.access import visible_assets
@@ -239,6 +256,10 @@ class PeerOut(BaseModel):
     max_queries_per_hour: int | None
     note: str | None
     last_seen_at: object | None
+    # Connection value: carrying builds weight; not carrying is only a chance not taken.
+    carried_count: int
+    connections_count: int
+    missed_count: int
 
 
 class FederatedQueryIn(QueryIn):
@@ -336,6 +357,188 @@ def peer_query(envelope: dict, db: Session = Depends(get_db)):
         return {"node_id": settings.NODE_ID, "results": [], "note": "already visited: not answering twice"}
     return seal_confidences(search(db, commitment=target, ttl=ttl, path=path, asked_by=None,
                                    direction="inbound", peer_node_id=peer.node_id))
+
+
+# --- introductions (WP-012 §5) ---------------------------------------------------------
+
+class IntroductionIn(BaseModel):
+    paths: list[list[str]] = Field(..., min_length=1,
+                                   description="One or more routes, each starting with this node")
+    commitment: str | None = Field(default=None, min_length=64, max_length=64)
+    item_type: str | None = Field(default=None, pattern="^(capacity|need)$")
+    item_class: str | None = Field(default=None, max_length=100)
+    region: str | None = Field(default=None, max_length=50)
+    period: str | None = Field(default=None, max_length=10)
+    message: str = Field(..., min_length=1, max_length=500, description="Why you are asking")
+    offer: str = Field(..., min_length=1, max_length=500,
+                       description="What you undertake if they say yes. An introduction is an offer, not a ping.")
+
+
+class CommitIn(BaseModel):
+    contact: str = Field(..., min_length=3, max_length=300, description="How they reach you")
+    note: str | None = Field(default=None, max_length=2000)
+
+
+class IntroductionDecisionIn(BaseModel):
+    accept: bool
+    note: str | None = Field(default=None, max_length=2000)
+    reply_contact: str | None = Field(default=None, max_length=300,
+                                      description="How to reach you: only sent if you accept")
+    share_items: list[str] | None = Field(default=None, description="Items to share as a slice, if you wish")
+
+
+def _intro_out(intro: Introduction, *, mine: bool) -> dict:
+    out = {
+        "id": intro.id, "correlation_id": intro.correlation_id, "role": intro.role,
+        "path": intro.path, "hop_index": intro.hop_index, "status": intro.status,
+        "message": intro.message, "offer": intro.offer, "commit_status": intro.commit_status,
+        "created_at": intro.created_at, "expires_at": intro.expires_at,
+        "decision_note": intro.decision_note, "from_node": intro.from_node,
+        "blocked_by": intro.blocked_by,
+    }
+    if intro.routes:
+        out["routes"] = intro.routes
+    if mine:  # contact and slice travel only to the person who asked
+        out |= {"reply_contact": intro.reply_contact, "reply_slice": intro.reply_slice}
+    if intro.role == "destination" and intro.commit_status == "committed":
+        out["requester_contact"] = intro.requester_contact  # they committed: now they are reachable
+    if intro.role == "destination":
+        out["candidate_items"] = intro.candidate_items
+    return out
+
+
+@router.post("/introductions", status_code=201)
+def request_introduction(payload: IntroductionIn, db: Session = Depends(get_db),
+                         principal=Depends(require_any_role(ROLE_USER, ROLE_AGENT))):
+    """Ask to be introduced along a path a query returned. Every hop, and the far end, may refuse."""
+    target = payload.commitment
+    if not target:
+        if not (payload.item_type and payload.item_class and payload.region and payload.period):
+            raise HTTPException(status_code=422,
+                                detail="give a commitment, or all of item_type, item_class, region and period")
+        target = commitment(payload.item_type, payload.item_class, payload.region, payload.period)
+    try:
+        intro = start(db, paths=payload.paths, commitment=target, message=payload.message,
+                      offer=payload.offer, requested_by=principal["sub"])
+    except PermissionError as e:
+        raise HTTPException(status_code=429, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    return _intro_out(intro, mine=True)
+
+
+@router.get("/introductions")
+def list_introductions(db: Session = Depends(get_db), me: User = Depends(get_current_user),
+                       principal=Depends(get_current_principal)):
+    """Yours to answer: ones you asked for, ones waiting on your items, and — for the node
+    operator — ones waiting on this node to pass along."""
+    rows = db.query(Introduction).order_by(Introduction.created_at.desc()).limit(200).all()
+    my_items = {i.id for i in db.query(MapItem.id).filter(MapItem.holder_user_id == me.id)}
+    is_operator = has_any_role(principal, ROLE_ADMIN, ROLE_AUDITOR)
+    out = []
+    for r in rows:
+        mine = r.requested_by == principal["sub"]
+        concerns_me = bool(set(r.candidate_items or []) & my_items)
+        if mine or concerns_me or is_operator:
+            out.append(_intro_out(r, mine=mine) | {"awaiting_you": (concerns_me or is_operator) and r.status == "pending"})
+    return out
+
+
+@router.post("/introductions/{intro_id}/decision")
+def decide_introduction(intro_id: str, payload: IntroductionDecisionIn, db: Session = Depends(get_db),
+                        me: User = Depends(get_current_user), principal=Depends(get_current_principal)):
+    """Pass it on, or refuse. At the far end, accepting means choosing how to be reached,
+    and optionally sharing a slice."""
+    intro = db.get(Introduction, intro_id)
+    if not intro:
+        raise HTTPException(status_code=404, detail="introduction not found")
+    my_items = {i.id for i in db.query(MapItem.id).filter(MapItem.holder_user_id == me.id)}
+    is_holder = bool(set(intro.candidate_items or []) & my_items)
+    if intro.role == "relay" and not has_any_role(principal, ROLE_ADMIN):
+        raise HTTPException(status_code=403, detail="only the node operator decides whether to pass a request on")
+    if intro.role == "destination" and not (is_holder or has_any_role(principal, ROLE_ADMIN)):
+        raise HTTPException(status_code=403, detail="only a holder of the matching items can answer this")
+    if intro.role == "origin":
+        raise HTTPException(status_code=422, detail="this is your own request; nothing to decide")
+
+    reply_slice = None
+    if payload.accept and payload.share_items:
+        items = db.query(MapItem).filter(MapItem.id.in_(payload.share_items),
+                                         MapItem.holder_user_id == me.id).all()
+        if len(items) != len(payload.share_items):
+            raise HTTPException(status_code=403, detail="you can only share your own items")
+        reply_slice = build_map_slice(db, me.id, items, [], purpose="introduction")
+
+    try:
+        intro = decide(db, intro, accept=payload.accept, note=payload.note, decided_by=principal["sub"],
+                       reply_contact=payload.reply_contact, reply_slice=reply_slice)
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e))
+    return _intro_out(intro, mine=False)
+
+
+@router.post("/introductions/{intro_id}/commit")
+def commit_introduction(intro_id: str, payload: CommitIn, db: Session = Depends(get_db),
+                        principal=Depends(require_any_role(ROLE_USER, ROLE_AGENT))):
+    """The far end said yes; now you stand behind your offer. Your contact travels to them
+    along the route that got through, and not before."""
+    intro = db.get(Introduction, intro_id)
+    if not intro or intro.requested_by != principal["sub"]:
+        raise HTTPException(status_code=404, detail="introduction not found")
+    try:
+        intro = commit_offer(db, intro, contact=payload.contact, note=payload.note,
+                             by_subject=principal["sub"])
+    except ValueError as e:
+        raise HTTPException(status_code=409, detail=str(e))
+    return _intro_out(intro, mine=True)
+
+
+@router.post("/peer/introduction/commit")
+def peer_introduction_commit(envelope: dict, db: Session = Depends(get_db)):
+    """A commitment travelling up the path to the far end."""
+    try:
+        peer = verify_request(db, envelope)
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    try:
+        intro = receive_commit(db, body=envelope.get("body") or {}, from_node=peer.node_id)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    if intro is None:
+        raise HTTPException(status_code=404, detail="no such introduction here")
+    return {"correlation_id": intro.correlation_id, "commit_status": intro.commit_status}
+
+
+@router.post("/peer/introduction")
+def peer_introduction(envelope: dict, db: Session = Depends(get_db)):
+    """A signed introduction request handed over by the previous node on the path."""
+    try:
+        peer = verify_request(db, envelope)
+        check_peer_rate(peer)
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    try:
+        intro = receive(db, body=envelope.get("body") or {}, from_node=peer.node_id)
+    except (ValueError, KeyError) as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    return {"correlation_id": intro.correlation_id, "status": intro.status, "role": intro.role,
+            "note": "Held for a decision here. Nobody is contactable merely for being on a graph."}
+
+
+@router.post("/peer/introduction/reply")
+def peer_introduction_reply(envelope: dict, db: Session = Depends(get_db)):
+    """An answer travelling back down the path."""
+    try:
+        peer = verify_request(db, envelope)
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    try:
+        intro = receive_reply(db, body=envelope.get("body") or {}, from_node=peer.node_id)
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    if intro is None:
+        raise HTTPException(status_code=404, detail="no such introduction here")
+    return {"correlation_id": intro.correlation_id, "status": intro.status}
 
 
 @router.get("/queries")

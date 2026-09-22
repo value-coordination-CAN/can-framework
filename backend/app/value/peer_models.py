@@ -32,6 +32,11 @@ class Peer(Base):
     added_by: Mapped[str | None] = mapped_column(String(400), nullable=True)
     note: Mapped[str | None] = mapped_column(Text, nullable=True)
     last_seen_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    # Connection value: what this peer has carried, and what it has connected. Carrying
+    # builds weight; not carrying is a missed opportunity, counted but never deducted.
+    carried_count: Mapped[int] = mapped_column(Integer, default=0)
+    connections_count: Mapped[int] = mapped_column(Integer, default=0)
+    missed_count: Mapped[int] = mapped_column(Integer, default=0)
 
 
 class QueryLog(Base):

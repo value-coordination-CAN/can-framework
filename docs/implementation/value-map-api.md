@@ -7,7 +7,7 @@
 
 Needs and capacities recorded on a node, shared as verifiable slices, and made findable by commitment without publishing a catalogue of what the node holds.
 
-**Built:** map items, slices, commitments, local matching, peering, forwarding across hops, introductions in which an offer travels to the far end by several routes at once, and **agreements** — a committed introduction becomes a recorded, verifiable agreement and, where both parties are here, a WP-010 contribution or supplier agreement.
+**Built:** map items, slices, commitments, local matching, peering, forwarding across hops **with path proofs**, introductions in which an offer travels to the far end by several routes at once, and agreements that become WP-010 contributions or supplier agreements.
 
 ---
 

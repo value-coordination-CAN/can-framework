@@ -28,6 +28,7 @@ from app.core.config import settings
 from app.core.time import utcnow
 from app.value.commitments import answer_query, discovery_rules
 from app.value.peer_models import Peer, QueryLog
+from app.value.proofs import match_attestation, new_proof, verify_proof, wrap_hop
 
 
 def _b64(b: bytes) -> str:
@@ -108,7 +109,7 @@ def log_query(db: Session, **kwargs) -> None:
 
 
 def search(db: Session, *, commitment: str, ttl: int, path: list[str], asked_by: str | None,
-           direction: str, peer_node_id: str | None = None) -> dict:
+           direction: str, peer_node_id: str | None = None, query_id: str = "") -> dict:
     """Answer locally, then pass the query to peers while the time to live allows.
 
     Returns paths, not contents: each result says how far away a match is, through which
@@ -129,6 +130,8 @@ def search(db: Session, *, commitment: str, ttl: int, path: list[str], asked_by:
             "degree": hops,
             "confidence": 1.0 if hops == 0 else None,  # filled in by the caller that owns the weights
             "match": True,
+            # Signed here, by the node that actually holds a match: nobody else can make it.
+            "proof": new_proof(match_attestation(query_id, commitment)),
         })
 
     if ttl > 0:
@@ -136,7 +139,8 @@ def search(db: Session, *, commitment: str, ttl: int, path: list[str], asked_by:
         for peer in db.query(Peer).filter(Peer.status == "active").all():
             if peer.node_id in onward or not peer.base_url:
                 continue  # no loops, and nothing to call
-            envelope = sign_request({"commitment": commitment, "ttl": ttl - 1, "path": onward})
+            envelope = sign_request({"commitment": commitment, "ttl": ttl - 1, "path": onward,
+                                     "query_id": query_id})
             answer = PEER_CLIENT(peer, envelope)
             if not answer:
                 continue
@@ -149,6 +153,12 @@ def search(db: Session, *, commitment: str, ttl: int, path: list[str], asked_by:
                 r = dict(r)
                 r["confidence"] = round(hop_conf * (prior if prior is not None else 1.0) * decay, 6)
                 r["degree"] = len(r.get("path", [])) - len(path) - 1
+                # A relay signs what it passes on, over the peer it came from and the proof
+                # it received: a link that cannot be dropped without breaking the chain.
+                # The origin does not sign: it is the one asking, and it verifies instead.
+                if path:
+                    r["proof"] = wrap_hop(r.get("proof"), query_id=query_id, commitment=commitment,
+                                          from_node=peer.node_id)
                 results.append(r)
 
     results.sort(key=lambda r: (-(r.get("confidence") or 0), r.get("degree", 99)))
@@ -163,6 +173,20 @@ def seal_confidences(payload: dict) -> dict:
     for r in payload.get("results", []):
         if r.get("confidence") is None:
             r["confidence"] = 1.0
+    return payload
+
+
+def check_proofs(db: Session, payload: dict, *, query_id: str, commitment: str) -> dict:
+    """Verify each result's proof at the origin, anchored on the peer it came through."""
+    for r in payload.get("results", []):
+        path = r.get("path") or []
+        anchor = path[1] if len(path) > 1 else None  # the peer this node handed the query to
+        peer = db.query(Peer).filter(Peer.node_id == anchor).first() if anchor else None
+        report = verify_proof(r.get("proof"), query_id=query_id, commitment=commitment, path=path,
+                              anchor_node=anchor, anchor_public_key=peer.public_key if peer else None)
+        r["proven"] = report["proven"]
+        if report["problems"]:
+            r["proof_problems"] = report["problems"]
     return payload
 
 

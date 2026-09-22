@@ -1,4 +1,5 @@
 """The value map: needs and capacities, shareable slices, and commitment discovery (WP-012)."""
+import secrets
 from datetime import date
 
 from fastapi import APIRouter, Depends, HTTPException, Query
@@ -28,6 +29,7 @@ from app.value.agreements import (
 from app.value.documents import trusted_nodes, verify_document
 from app.value.forwarding import (
     check_peer_rate,
+    check_proofs,
     commitment_fingerprint,
     search,
     seal_confidences,
@@ -273,6 +275,7 @@ class PeerOut(BaseModel):
 class FederatedQueryIn(QueryIn):
     max_degree: int | None = Field(default=None, ge=0, le=6)
     min_confidence: float = Field(0.0, ge=0, le=1)
+    proven_only: bool = Field(default=False, description="Drop results whose path proof does not verify")
 
 
 @router.post("/peers", response_model=PeerOut, status_code=201)
@@ -335,17 +338,24 @@ def federated_query(payload: FederatedQueryIn, db: Session = Depends(get_db),
         raise HTTPException(status_code=429, detail=str(e), headers={"Retry-After": "3600"})
 
     ttl = payload.max_degree if payload.max_degree is not None else int(rules.get("max_degree_default", 3))
+    query_id = secrets.token_hex(16)  # binds every proof to this question, so none can be replayed
     result = seal_confidences(search(db, commitment=target, ttl=ttl, path=[], asked_by=principal["sub"],
-                                     direction="local"))
+                                     direction="local", query_id=query_id))
+    result = check_proofs(db, result, query_id=query_id, commitment=target)
     results = [r for r in result["results"] if (r.get("confidence") or 0) >= payload.min_confidence]
+    if payload.proven_only:
+        results = [r for r in results if r.get("proven")]
     return {
         "commitment": target,
+        "query_id": query_id,
         "epoch": current_epoch(),
-        "asked": {"max_degree": ttl, "min_confidence": payload.min_confidence},
+        "asked": {"max_degree": ttl, "min_confidence": payload.min_confidence,
+                  "proven_only": payload.proven_only},
         "found": len(results),
         "results": results,
-        "note": "Each result is a path and its confidence. To go further, ask the nodes on the path "
-                "for an introduction; every hop, and the holder, may refuse.",
+        "note": "Each result is a path, its confidence and a proof. A proven result carries a signature "
+                "from the node that holds the match and one from every hop it came through, so a degree "
+                "cannot be shortened and a match cannot be claimed on someone else's behalf.",
     }
 
 
@@ -364,7 +374,8 @@ def peer_query(envelope: dict, db: Session = Depends(get_db)):
     if settings.NODE_ID in path:
         return {"node_id": settings.NODE_ID, "results": [], "note": "already visited: not answering twice"}
     return seal_confidences(search(db, commitment=target, ttl=ttl, path=path, asked_by=None,
-                                   direction="inbound", peer_node_id=peer.node_id))
+                                   direction="inbound", peer_node_id=peer.node_id,
+                                   query_id=str(body.get("query_id") or "")))
 
 
 # --- introductions (WP-012 §5) ---------------------------------------------------------

@@ -19,6 +19,7 @@ from app.agents.schemas import (
     AgentUpdate,
     AgentVerifyIn,
     AgentVerifyOut,
+    PublicAgentOut,
     DerivedRecordIn,
     DerivedRecordOut,
     RecomputationOut,
@@ -80,6 +81,8 @@ def rules():
         "principles": [
             "Agents derive; they do not witness. No agent may attest to first-hand fact.",
             "Every agent answers to a named steward. No steward, no write access.",
+            "Every agent is listed in the open register at /agents/register, with a contact, "
+            "readable by anyone without an account.",
             "Every derived record is reproducible from its stated inputs.",
             "A record that fails recomputation is superseded automatically.",
             "Writes pause when the unreviewed queue is full; the review is never skipped.",
@@ -87,6 +90,39 @@ def rules():
             "Agents may hold mandates. They never hold entitlements to what people need.",
         ],
     }
+
+
+# --- the open register: no account needed --------------------------------------------
+
+@router.get("/register", response_model=list[PublicAgentOut])
+def public_register(
+    q: str | None = Query(None, max_length=200, description="Match on name, model or DID"),
+    status: str | None = Query(None, pattern="^(active|suspended|revoked|no_steward)$"),
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
+    db: Session = Depends(get_db),
+):
+    """Every agent that can write to CAN, and who answers for it.
+
+    Open to anyone, without an account: a person affected by an agent's work should not
+    need standing in the system to find out who is responsible for it. Revoked agents stay
+    listed, because accountability outlives the mandate.
+    """
+    query = db.query(Agent)
+    if q:
+        like = f"%{q}%"
+        query = query.filter(Agent.name.ilike(like) | Agent.model.ilike(like) | Agent.did.ilike(like))
+    entries = [service.public_entry(db, a) for a in query.order_by(Agent.created_at.desc()).offset(offset).limit(limit)]
+    if status:
+        entries = [e for e in entries if e["status"] == status]
+    return entries
+
+
+@router.get("/register/{agent_id}", response_model=PublicAgentOut)
+def public_register_entry(agent_id: str, db: Session = Depends(get_db)):
+    """One agent's public entry. What it wrote, and about whom, is not published here:
+    to read or challenge a particular record you sign in and use /agents/records."""
+    return service.public_entry(db, _agent(db, agent_id))
 
 
 # --- registration, by a human steward ------------------------------------------------
@@ -137,6 +173,8 @@ def _update_agent(agent_id: str, payload: AgentUpdate, db: Session, me: User, pr
         a.max_unreviewed = payload.max_unreviewed
     if payload.contact is not None:
         a.contact = payload.contact
+    if payload.steward_name_public is not None:
+        a.steward_name_public = payload.steward_name_public
     if payload.status is not None:
         a.status = payload.status
         a.revoked_reason = payload.reason

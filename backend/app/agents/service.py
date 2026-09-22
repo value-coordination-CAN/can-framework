@@ -3,11 +3,13 @@ import hashlib
 import json
 from datetime import timedelta
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.agents.config import load_agent_rules
 from app.agents.models import Agent, DerivedRecord, Recomputation
 from app.core.time import utcnow
+from app.db.models import User
 
 
 class AgentError(ValueError):
@@ -73,6 +75,70 @@ def queue_state(db: Session, agent: Agent) -> dict:
         "writes_paused": used >= ceiling,
         "steward": steward_queue_state(db, agent.steward_user_id),
         "note": "Writes pause when the unreviewed queue is full. The queue stops; the review is never skipped.",
+    }
+
+
+def public_entry(db: Session, agent: Agent) -> dict:
+    """The open register's view of an agent: who answers for it, and how its work has held up.
+
+    It deliberately carries no subject references, statements, inputs or outputs: what an
+    agent wrote, and about whom, is not public because an agent happens to be public.
+    """
+    rows = db.query(DerivedRecord.status, func.count(DerivedRecord.id)).filter(
+        DerivedRecord.agent_id == agent.id
+    ).group_by(DerivedRecord.status).all()
+    by_status = {s: n for s, n in rows}
+    mismatched = db.query(DerivedRecord).filter(
+        DerivedRecord.agent_id == agent.id, DerivedRecord.recompute_status == "mismatched"
+    ).count()
+    checked = db.query(DerivedRecord).filter(
+        DerivedRecord.agent_id == agent.id, DerivedRecord.recompute_status != "unchecked"
+    ).count()
+    steward = db.get(User, agent.steward_user_id)
+
+    # Participation: what this agent has actually contributed, and how it has held up.
+    # Counts and kinds only; never which records, or whose.
+    by_kind = dict(db.query(DerivedRecord.kind, func.count(DerivedRecord.id)).filter(
+        DerivedRecord.agent_id == agent.id).group_by(DerivedRecord.kind).all())
+    first, last = db.query(func.min(DerivedRecord.created_at), func.max(DerivedRecord.created_at)).filter(
+        DerivedRecord.agent_id == agent.id).one()
+    subjects = db.query(func.count(func.distinct(DerivedRecord.subject_ref))).filter(
+        DerivedRecord.agent_id == agent.id).scalar() or 0
+    reviewed = by_status.get("confirmed", 0) + by_status.get("rejected", 0)
+    participation = {
+        "contributions_by_kind": by_kind,
+        "subjects_contributed_to": subjects,
+        "first_contribution": first,
+        "latest_contribution": last,
+        "confirmed_share": round(by_status.get("confirmed", 0) / reviewed, 3) if reviewed else None,
+        "recomputation_pass_rate": round((checked - mismatched) / checked, 3) if checked else None,
+        "value_accrues_to": "steward",
+        "holds_entitlements": False,
+        "note": "An agent's participation is visible and checkable. What it produces belongs to "
+                "the steward who answers for it; an agent holds no entitlements of its own.",
+    }
+    return {
+        "id": agent.id,
+        "did": agent.did,
+        "name": agent.name,
+        "model": agent.model,
+        "status": agent.status if steward is not None else "no_steward",
+        "scopes": agent.scopes or [],
+        "created_at": agent.created_at,
+        "revoked_at": agent.revoked_at,
+        "revoked_reason": agent.revoked_reason,
+        "contact": agent.contact,
+        "steward_name": steward.display_name if (steward is not None and agent.steward_name_public) else None,
+        "records": {
+            "total": sum(by_status.values()),
+            "unreviewed": by_status.get("unreviewed", 0),
+            "confirmed": by_status.get("confirmed", 0),
+            "rejected": by_status.get("rejected", 0),
+            "superseded": by_status.get("superseded", 0),
+            "recomputed": checked,
+            "failed_recomputation": mismatched,
+        },
+        "participation": participation,
     }
 
 

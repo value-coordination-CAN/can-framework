@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import JSON, DateTime, ForeignKey, String, Text
+from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.time import utcnow
@@ -25,7 +25,10 @@ class Agent(Base):
     name: Mapped[str] = mapped_column(String(200))
     model: Mapped[str | None] = mapped_column(String(200), nullable=True)
     steward_user_id: Mapped[str] = mapped_column(String, ForeignKey("users.id"), index=True)
+    # Published in the open register, so anyone affected can reach whoever answers for the agent.
     contact: Mapped[str | None] = mapped_column(String(300), nullable=True)
+    # The steward's own name is published only if they choose. The contact is not optional.
+    steward_name_public: Mapped[bool] = mapped_column(Boolean, default=False)
     scopes: Mapped[list] = mapped_column(JSON, default=list)
     status: Mapped[str] = mapped_column(String(20), default="active")
     max_unreviewed: Mapped[int | None] = mapped_column(nullable=True)  # overrides the default ceiling

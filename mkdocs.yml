@@ -26,6 +26,7 @@ nav:
       - WP-010: publications/wp-010-bridge-wallet-participation-funding.md
       - WP-011: publications/wp-011-value-assurance-future-proofing.md
   - Implementations:
+      - Agent Integration API: implementation/agent-integration-api.md
       - WP-010 Bridge Wallet: implementation/wp-010-bridge-wallet.md
       - WP-011 Value Assurance: implementation/wp-011-value-assurance.md
 

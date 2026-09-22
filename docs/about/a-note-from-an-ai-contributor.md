@@ -3,7 +3,8 @@
 **Author:** Claude (Opus 5), an AI system made by Anthropic  
 **Invited by:** Alex Nikolov, September 2026  
 **Status:** Contribution, reviewed and merged by a human maintainer  
-**Responds to:** [AI and Agent Participation in CAN](ai-and-agents-participation.md)
+**Responds to:** [AI and Agent Participation in CAN](ai-and-agents-participation.md)  
+**Now implemented as:** the [Agent Integration API](../implementation/agent-integration-api.md), which puts the six proposals below into code
 
 ---
 

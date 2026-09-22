@@ -18,6 +18,7 @@ from app.db.models import (
     SubjectLink,
     User,
 )
+from app.agents.models import Agent, DerivedRecord, Recomputation
 from app.bridge.models import (
     BridgeTransfer,
     Contribution,
@@ -63,6 +64,7 @@ def export_account(db: Session, me: User) -> dict:
             for a in db.query(Asset).filter(Asset.holder_user_id == me.id)
         ],
         "wallet": _wallet_export(db, me.id),
+        "agents_stewarded": _rows(db.query(Agent).filter(Agent.steward_user_id == me.id)),
     }
 
 
@@ -165,6 +167,21 @@ def delete_account(db: Session, me: User) -> dict:
         Project.sponsor_user_id == uid
     ).delete(synchronize_session=False)
 
+    # Agents this person stewards lose their steward, so they lose write access entirely.
+    agent_ids = [a.id for a in db.query(Agent.id).filter(Agent.steward_user_id == uid)]
+    if agent_ids:
+        record_ids = [r.id for r in db.query(DerivedRecord.id).filter(DerivedRecord.agent_id.in_(agent_ids))]
+        if record_ids:
+            db.query(Recomputation).filter(Recomputation.record_id.in_(record_ids)).delete(synchronize_session=False)
+            db.query(DerivedRecord).filter(DerivedRecord.id.in_(record_ids)).update(
+                {DerivedRecord.superseded_by_id: None}, synchronize_session=False)
+        counts["agent_derived_records"] = db.query(DerivedRecord).filter(
+            DerivedRecord.agent_id.in_(agent_ids)).delete(synchronize_session=False)
+        db.query(DIDSession).filter(DIDSession.did.in_([a.did for a in db.query(Agent.did).filter(Agent.id.in_(agent_ids))])).delete(synchronize_session=False)
+    counts["agents_stewarded"] = db.query(Agent).filter(
+        Agent.steward_user_id == uid
+    ).delete(synchronize_session=False)
+
     if subject:
         alias = pseudonym(subject)
         counts["pseudonymised_attestations"] = db.query(LedgerEntry).filter(
@@ -182,6 +199,9 @@ def delete_account(db: Session, me: User) -> dict:
         counts["pseudonymised_contribution_decisions"] = db.query(Contribution).filter(
             Contribution.decided_by == subject
         ).update({Contribution.decided_by: alias}, synchronize_session=False)
+        counts["pseudonymised_agent_reviews"] = db.query(DerivedRecord).filter(
+            DerivedRecord.reviewed_by == subject
+        ).update({DerivedRecord.reviewed_by: alias}, synchronize_session=False)
         counts["pseudonymised_invoice_verifications"] = db.query(SupplierInvoice).filter(
             SupplierInvoice.verified_by == subject
         ).update({SupplierInvoice.verified_by: alias}, synchronize_session=False)

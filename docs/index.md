@@ -46,6 +46,7 @@ These documents define CAN’s governance, safeguards, technical architecture, a
 
 Working code that turns the papers into infrastructure anyone can run and test.
 
+- 🤖 [Agent Integration API](implementation/agent-integration-api.md): how an AI or software agent takes part — a steward who answers for it, derivations that anyone can recompute, writes that pause when review falls behind, and no entitlements.
 - 🛠️ [WP-010 Bridge Wallet](implementation/wp-010-bridge-wallet.md): three layers in one wallet, projects funded by contributions of every kind earning participation and access, suppliers paid on verified delivery with future-proofed profit, and pledging without sale.
 - 🛠️ [WP-011 Value Assurance](implementation/wp-011-value-assurance.md): evidenced asset value, stress scenarios, an agentic assurance loop bounded by the holder's mandate, selective disclosure, and a browser UI with self-held keys.
 

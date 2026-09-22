@@ -1,31 +1,65 @@
-from functools import lru_cache
+import threading
+import time
 from typing import Any, Dict
+
 import httpx
 from jose import jwt
 from jose.exceptions import JWTError
 
-@lru_cache
+from app.core.config import settings
+
+_lock = threading.Lock()
+_discovery: Dict[str, Dict[str, Any]] = {}
+_jwks: Dict[str, tuple[float, Dict[str, Any]]] = {}
+
+
 def _discover(issuer: str) -> Dict[str, Any]:
+    with _lock:
+        if issuer in _discovery:
+            return _discovery[issuer]
     r = httpx.get(f"{issuer}/.well-known/openid-configuration", timeout=10)
     r.raise_for_status()
-    return r.json()
+    conf = r.json()
+    with _lock:
+        _discovery[issuer] = conf
+    return conf
 
-@lru_cache
-def _jwks(jwks_uri: str) -> Dict[str, Any]:
+
+def _get_jwks(jwks_uri: str, force: bool = False) -> Dict[str, Any]:
+    now = time.monotonic()
+    with _lock:
+        cached = _jwks.get(jwks_uri)
+        if cached and not force and now - cached[0] < settings.OIDC_JWKS_TTL_SECONDS:
+            return cached[1]
     r = httpx.get(jwks_uri, timeout=10)
     r.raise_for_status()
-    return r.json()
+    keys = r.json()
+    with _lock:
+        _jwks[jwks_uri] = (now, keys)
+    return keys
+
+
+def _find_key(jwks: Dict[str, Any], kid: str | None) -> Dict[str, Any] | None:
+    return next((k for k in jwks.get("keys", []) if k.get("kid") == kid), None)
+
 
 def verify_access_token(token: str, issuer: str, audience: str) -> Dict[str, Any]:
-    conf = _discover(issuer)
-    jwks = _jwks(conf["jwks_uri"])
-
     try:
         header = jwt.get_unverified_header(token)
-        kid = header.get("kid")
-        key = next(k for k in jwks["keys"] if k.get("kid") == kid)
+    except JWTError as e:
+        raise ValueError(f"invalid token: {e}") from e
+    kid = header.get("kid")
 
-        claims = jwt.decode(
+    conf = _discover(issuer)
+    key = _find_key(_get_jwks(conf["jwks_uri"]), kid)
+    if key is None:
+        # Unknown kid: the issuer may have rotated its keys, so refresh once.
+        key = _find_key(_get_jwks(conf["jwks_uri"], force=True), kid)
+    if key is None:
+        raise ValueError("invalid token: unknown signing key")
+
+    try:
+        return jwt.decode(
             token,
             key,
             algorithms=["RS256"],
@@ -33,9 +67,9 @@ def verify_access_token(token: str, issuer: str, audience: str) -> Dict[str, Any
             audience=audience,
             options={"verify_at_hash": False},
         )
-        return claims
-    except (StopIteration, JWTError) as e:
+    except JWTError as e:
         raise ValueError(f"invalid token: {e}") from e
+
 
 def extract_roles(claims: Dict[str, Any]) -> set[str]:
     roles = set()

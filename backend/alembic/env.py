@@ -2,11 +2,15 @@ from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 from alembic import context
 
+from app.core.config import settings
 from app.db.base import Base
 from app.db import models  # noqa: F401
+from app.models import network_edge  # noqa: F401
 
 config = context.config
 fileConfig(config.config_file_name)
+# Use the same database as the app (DATABASE_URL), not the placeholder in alembic.ini.
+config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 
 target_metadata = Base.metadata
 

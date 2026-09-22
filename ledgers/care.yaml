@@ -1,5 +1,15 @@
+# Care is an uplift only: it can raise priority, never lower it.
+# Every factor below is sensitive (health, age, family life, crisis) and counts only with the
+# person's explicit, revocable consent (PUT /identity/me/care-consent). Revoking consent deletes
+# that factor's entries. Without consent, entries for the factor cannot be recorded.
 care:
   factors:
+    - health
+    - parenting
+    - burnout
+    - age
+    - crisis
+  opt_in_required:
     - health
     - parenting
     - burnout

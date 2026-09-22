@@ -1,7 +1,7 @@
 """linkedin network edges
 
 Revision ID: 016f621224c7
-Revises:
+Revises: 0002_did_auth_tables
 Create Date: 2026-02-06
 """
 
@@ -9,7 +9,7 @@ from alembic import op
 import sqlalchemy as sa
 
 revision = "016f621224c7"
-down_revision = None
+down_revision = "0002_did_auth_tables"
 branch_labels = None
 depends_on = None
 

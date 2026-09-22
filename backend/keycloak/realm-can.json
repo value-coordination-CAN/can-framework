@@ -32,7 +32,15 @@
     "realm": [
       {
         "name": "can_user",
-        "description": "Basic CAN access"
+        "description": "Basic CAN access: act on one's own record"
+      },
+      {
+        "name": "can_attester",
+        "description": "Record ledger entries about other people, with evidence"
+      },
+      {
+        "name": "can_reviewer",
+        "description": "Decide allocation requests and resolve appeals"
       },
       {
         "name": "can_admin",
@@ -40,7 +48,7 @@
       },
       {
         "name": "can_auditor",
-        "description": "Audit access"
+        "description": "Read-only audit access"
       }
     ]
   },
@@ -59,6 +67,24 @@
       ],
       "realmRoles": [
         "can_user"
+      ]
+    },
+    {
+      "username": "testreviewer",
+      "enabled": true,
+      "emailVerified": true,
+      "email": "testreviewer@example.org",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "testpass",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "can_user",
+        "can_attester",
+        "can_reviewer"
       ]
     }
   ]

@@ -1,9 +1,16 @@
-"""WP-010 bridge wallet API."""
-from fastapi import APIRouter, Depends, HTTPException
+"""WP-010 bridge wallet API, and payment mandates for agents (WP-013)."""
+from datetime import datetime, timedelta
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
+from app.agents.auth import ROLE_AGENT, get_current_agent
+from app.agents.models import Agent
 from app.bridge import service
+from app.bridge.agent_payments import pay
+from app.bridge.mandate_models import AgentPayment, PaymentMandate
 from app.bridge.models import (
     HOLDING_KINDS,
     LAYERS,
@@ -36,7 +43,17 @@ from app.bridge.schemas import (
     SettleIn,
     TransferOut,
 )
-from app.core.auth import ROLE_ADMIN, ROLE_REVIEWER, get_current_principal, get_current_user, has_any_role
+from app.core.auth import (
+    ROLE_ADMIN,
+    ROLE_AUDITOR,
+    ROLE_REVIEWER,
+    ROLE_USER,
+    current_user_or_none,
+    get_current_principal,
+    get_current_user,
+    has_any_role,
+    require_any_role,
+)
 from app.core.time import utcnow
 from app.db.models import User
 from app.db.session import get_db
@@ -102,6 +119,159 @@ def wallet(db: Session = Depends(get_db), me: User = Depends(get_current_user)):
 def transfers(db: Session = Depends(get_db), me: User = Depends(get_current_user)):
     w = service.get_or_create_wallet(db, me.id)
     return db.query(BridgeTransfer).filter(BridgeTransfer.wallet_id == w.id).order_by(BridgeTransfer.created_at.desc()).all()
+
+
+# --- payment mandates for agents (WP-013) --------------------------------------------
+
+class MandateCreate(BaseModel):
+    agent_id: str
+    purposes: list[str] = Field(..., min_length=1, description="What this agent may pay for")
+    currency: str = Field("USD", pattern="^[A-Z]{3}$")
+    max_per_payment: float = Field(..., gt=0)
+    max_total: float = Field(..., gt=0)
+    payee_user_ids: list[str] | None = Field(default=None, description="Omit to allow any payee")
+    requires_evidence: bool = True
+    hours: float = Field(72, gt=0, le=8760, description="How long the mandate lasts")
+    note: str | None = Field(default=None, max_length=2000)
+
+
+class MandateOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    created_at: datetime
+    agent_id: str
+    granted_by_user_id: str
+    purposes: list
+    currency: str
+    max_per_payment: float
+    max_total: float
+    spent_total: float
+    payee_user_ids: list | None
+    requires_evidence: bool
+    expires_at: datetime
+    status: str
+    note: str | None
+    revoked_reason: str | None
+
+
+class AgentPaymentIn(BaseModel):
+    mandate_id: str
+    payee_user_id: str
+    amount: float = Field(..., gt=0)
+    currency: str = Field("USD", pattern="^[A-Z]{3}$")
+    purpose: str = Field(..., min_length=1, max_length=200)
+    evidence_ref: str | None = Field(default=None, max_length=500,
+                                     description="What this payment answers to: an invoice, a delivery")
+    rail: str | None = None
+
+
+class AgentPaymentOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    created_at: datetime
+    mandate_id: str | None
+    agent_id: str
+    payer_user_id: str
+    payee_user_id: str | None
+    amount: float
+    currency: str
+    purpose: str
+    evidence_ref: str | None
+    status: str
+    refusal_reason: str | None
+    rail: str | None
+    settlement_ref: str | None
+    transaction_object: dict | None
+
+
+@router.post("/mandates", response_model=MandateOut, status_code=201)
+def grant_mandate(payload: MandateCreate, db: Session = Depends(get_db), me: User = Depends(get_current_user)):
+    """Authorise an agent to spend your money, within limits you set and can withdraw."""
+    agent = db.get(Agent, payload.agent_id)
+    if not agent:
+        raise HTTPException(status_code=404, detail="agent not found")
+    if agent.status != "active":
+        raise HTTPException(status_code=409, detail=f"that agent is {agent.status}")
+    if db.get(User, agent.steward_user_id) is None:
+        raise HTTPException(status_code=409, detail="that agent has no steward, so it has no write access")
+    data = payload.model_dump(exclude={"hours"})
+    m = PaymentMandate(granted_by_user_id=me.id, expires_at=utcnow() + timedelta(hours=payload.hours), **data)
+    db.add(m)
+    db.commit()
+    db.refresh(m)
+    return m
+
+
+@router.get("/mandates", response_model=list[MandateOut])
+def list_mandates(db: Session = Depends(get_db), principal=Depends(require_any_role(ROLE_USER, ROLE_AGENT))):
+    """Yours to answer for: mandates you granted, or — for an agent — the ones it holds."""
+    if has_any_role(principal, ROLE_AGENT):
+        agent = db.query(Agent).filter(Agent.did == principal["sub"]).first()
+        if agent is None:
+            raise HTTPException(status_code=403, detail="unknown agent")
+        return db.query(PaymentMandate).filter(PaymentMandate.agent_id == agent.id).all()
+    me = current_user_or_none(principal, db)
+    if me is None:
+        raise HTTPException(status_code=403, detail="no CAN profile for this identity")
+    return db.query(PaymentMandate).filter(PaymentMandate.granted_by_user_id == me.id).all()
+
+
+@router.post("/mandates/{mandate_id}/revoke", response_model=MandateOut)
+def revoke_mandate(mandate_id: str, reason: str | None = None, db: Session = Depends(get_db),
+                   me: User = Depends(get_current_user)):
+    """Withdraw it. The next payment attempt is refused, whatever the agent thinks it may do."""
+    m = db.get(PaymentMandate, mandate_id)
+    if not m or m.granted_by_user_id != me.id:
+        raise HTTPException(status_code=404, detail="mandate not found")
+    m.status = "revoked"
+    m.revoked_at = utcnow()
+    m.revoked_reason = reason
+    db.commit()
+    db.refresh(m)
+    return m
+
+
+@router.post("/payments", response_model=AgentPaymentOut)
+def agent_pay(payload: AgentPaymentIn, db: Session = Depends(get_db), agent: Agent = Depends(get_current_agent)):
+    """An agent pays under a mandate. Outside it, nothing reaches a rail and the refusal is kept."""
+    m = db.get(PaymentMandate, payload.mandate_id)
+    if not m:
+        raise HTTPException(status_code=404, detail="mandate not found")
+    if not db.get(User, payload.payee_user_id):
+        raise HTTPException(status_code=404, detail="payee not found")
+    payment = pay(db, mandate=m, agent_id=agent.id, agent_did=agent.did,
+                  steward_user_id=agent.steward_user_id, payee_user_id=payload.payee_user_id,
+                  amount=payload.amount, currency=payload.currency, purpose=payload.purpose,
+                  evidence_ref=payload.evidence_ref, rail_name=payload.rail)
+    if payment.status == "refused":
+        # 402: the payer's own rules refused it, not the server. The record is returned.
+        raise HTTPException(status_code=402, detail={"refused": payment.refusal_reason,
+                                                     "payment_id": payment.id,
+                                                     "mandate_id": m.id})
+    return payment
+
+
+@router.get("/payments", response_model=list[AgentPaymentOut])
+def list_agent_payments(status: str | None = Query(None, pattern="^(settled|refused)$"),
+                        db: Session = Depends(get_db),
+                        principal=Depends(require_any_role(ROLE_USER, ROLE_AGENT, ROLE_AUDITOR))):
+    """What an agent did with your money, including what it tried and was refused."""
+    q = db.query(AgentPayment)
+    if has_any_role(principal, ROLE_AGENT):
+        agent = db.query(Agent).filter(Agent.did == principal["sub"]).first()
+        q = q.filter(AgentPayment.agent_id == (agent.id if agent else ""))
+    elif not has_any_role(principal, ROLE_AUDITOR, ROLE_ADMIN):
+        me = current_user_or_none(principal, db)
+        mine = me.id if me else ""
+        # The payer sees everything their agent tried. A payee sees only what actually
+        # settled: a refusal is the payer's business, not the world's.
+        q = q.filter((AgentPayment.payer_user_id == mine) |
+                     ((AgentPayment.payee_user_id == mine) & (AgentPayment.status == "settled")))
+    if status:
+        q = q.filter(AgentPayment.status == status)
+    return q.order_by(AgentPayment.created_at.desc()).limit(200).all()
 
 
 # --- projects and contributions -----------------------------------------------------

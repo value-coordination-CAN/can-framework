@@ -72,6 +72,17 @@ The simulated rail records every movement and moves no money. It is what the tes
 | POST/GET | `/bridge/holdings/{id}/pledges`, DELETE `/bridge/pledges/{id}` | the holder |
 | POST | `/bridge/holdings/{id}/settle` | the holder |
 
+**Agent payments under a mandate** ([WP-013](../publications/wp-013-trusted-transaction-objects.md) demonstration 2):
+
+| Method | Path | Who |
+| --- | --- | --- |
+| POST/GET | `/bridge/mandates` | a person authorising an agent to spend, within stated limits |
+| POST | `/bridge/mandates/{id}/revoke` | the person who granted it, at any moment |
+| POST | `/bridge/payments` | an agent, under a mandate. Outside it: **402**, with the reason |
+| GET | `/bridge/payments` | the payer sees every attempt, refusals included; a payee sees only what settled |
+
+A settled payment carries a signed `can.transaction.v1` object — parties, mandate, purpose, evidence reference, settlement reference — verifiable through `POST /value/documents/verify` like any other document this node issues. Refusals are recorded before anything reaches a rail, because an audit trail that shows only what succeeded tells a person nothing about what their agent tried.
+
 ---
 
 ## 5. Try it

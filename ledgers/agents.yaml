@@ -23,9 +23,14 @@ agents:
   # When an agent's unreviewed queue reaches the ceiling, its writes pause.
   # The queue stops; the review is never skipped.
   limits:
-    max_unreviewed_records: 50
-    max_records_per_hour: 500
+    max_unreviewed_records: 50       # per agent
+    max_records_per_hour: 500        # per agent
     max_input_bytes: 200000
+    # The same argument one level up: a steward who registers several agents would
+    # otherwise multiply throughput while review capacity stays the same. These ceilings
+    # apply across every agent a steward answers for.
+    max_unreviewed_per_steward: 100
+    max_agents_per_steward: 5
 
   # Agents may hold mandates. They never hold entitlements to what people need.
   holdings:

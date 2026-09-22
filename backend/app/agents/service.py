@@ -36,6 +36,33 @@ def ceiling_for(agent: Agent) -> int:
     return int(agent.max_unreviewed or load_agent_rules().max_unreviewed_records)
 
 
+def steward_unreviewed_count(db: Session, steward_user_id: str) -> int:
+    """Unreviewed records across every agent this steward answers for."""
+    agent_ids = [a.id for a in db.query(Agent.id).filter(Agent.steward_user_id == steward_user_id)]
+    if not agent_ids:
+        return 0
+    return db.query(DerivedRecord).filter(
+        DerivedRecord.agent_id.in_(agent_ids), DerivedRecord.status == "unreviewed"
+    ).count()
+
+
+def steward_queue_state(db: Session, steward_user_id: str) -> dict:
+    rules = load_agent_rules()
+    used = steward_unreviewed_count(db, steward_user_id)
+    ceiling = rules.max_unreviewed_per_steward
+    agents = db.query(Agent).filter(Agent.steward_user_id == steward_user_id, Agent.status != "revoked").count()
+    return {
+        "unreviewed": used,
+        "ceiling": ceiling,
+        "remaining": max(ceiling - used, 0),
+        "writes_paused": used >= ceiling,
+        "agents": agents,
+        "max_agents": rules.max_agents_per_steward,
+        "note": "One steward cannot multiply throughput by registering more agents: "
+                "these ceilings apply across all of them, because review capacity is what is scarce.",
+    }
+
+
 def queue_state(db: Session, agent: Agent) -> dict:
     used = unreviewed_count(db, agent)
     ceiling = ceiling_for(agent)
@@ -44,8 +71,19 @@ def queue_state(db: Session, agent: Agent) -> dict:
         "ceiling": ceiling,
         "remaining": max(ceiling - used, 0),
         "writes_paused": used >= ceiling,
+        "steward": steward_queue_state(db, agent.steward_user_id),
         "note": "Writes pause when the unreviewed queue is full. The queue stops; the review is never skipped.",
     }
+
+
+def check_can_register(db: Session, steward_user_id: str) -> None:
+    rules = load_agent_rules()
+    active = db.query(Agent).filter(Agent.steward_user_id == steward_user_id, Agent.status != "revoked").count()
+    if active >= rules.max_agents_per_steward:
+        raise AgentForbidden(
+            f"you already steward {active} agents, the limit per steward is {rules.max_agents_per_steward}. "
+            "Revoke one, or ask another person who can genuinely review their output to steward it."
+        )
 
 
 def record_derived(db: Session, agent: Agent, *, kind: str, subject_ref: str, statement: str,
@@ -66,6 +104,11 @@ def record_derived(db: Session, agent: Agent, *, kind: str, subject_ref: str, st
     if unreviewed_count(db, agent) >= ceiling_for(agent):
         raise QueueFull(
             f"unreviewed queue is full ({ceiling_for(agent)}). Writes pause until a reviewer works through it."
+        )
+    if steward_unreviewed_count(db, agent.steward_user_id) >= rules.max_unreviewed_per_steward:
+        raise QueueFull(
+            f"your steward's unreviewed queue is full ({rules.max_unreviewed_per_steward} across all their agents). "
+            "Registering more agents does not create more review capacity."
         )
 
     rec = DerivedRecord(

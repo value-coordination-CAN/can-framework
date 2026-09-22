@@ -8,13 +8,15 @@ import yaml
 from app.core.config import settings
 
 
-@dataclass(frozen=True)
+@dataclass  # not frozen: deployments and tests may tighten a limit at runtime
 class AgentRules:
     record_kinds: dict[str, str]
     scopes: dict[str, str]
     max_unreviewed_records: int
     max_records_per_hour: int
     max_input_bytes: int
+    max_unreviewed_per_steward: int
+    max_agents_per_steward: int
     holdings: dict
     on_mismatch: str
 
@@ -44,6 +46,8 @@ def load_agent_rules(config_dir: str | None = None) -> AgentRules:
         max_unreviewed_records=int(limits["max_unreviewed_records"]),
         max_records_per_hour=int(limits["max_records_per_hour"]),
         max_input_bytes=int(limits["max_input_bytes"]),
+        max_unreviewed_per_steward=int(limits["max_unreviewed_per_steward"]),
+        max_agents_per_steward=int(limits["max_agents_per_steward"]),
         holdings=raw["holdings"],
         on_mismatch=raw["recomputation"]["on_mismatch"],
     )

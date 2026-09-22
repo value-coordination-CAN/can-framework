@@ -6,6 +6,10 @@
 **Author:** Alex Nikolov  
 **Reference implementation:** [WP-010 Bridge Wallet: code and UI](../implementation/wp-010-bridge-wallet.md)
 
+!!! tip "Start concrete"
+    Code and UI: [WP-010 Bridge Wallet](../implementation/wp-010-bridge-wallet.md).
+    Worked example: [an agent that spends, and is refused](../in-practice.md#3-an-agent-that-spends-and-is-refused).
+
 ---
 
 ## Abstract

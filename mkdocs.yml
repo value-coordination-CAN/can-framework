@@ -13,6 +13,7 @@ use_directory_urls: true
 
 nav:
   - Home: index.md
+  - In Practice: in-practice.md
   - Publications:
       - WP-001: publications/wp-001-network-value.md
       - WP-002: publications/wp-002-practical-post-money-allocation.md
@@ -57,6 +58,8 @@ markdown_extensions:
       permalink: true
   - tables
   - admonition
+  - pymdownx.details
+  - pymdownx.superfences
 
 plugins:
   - search

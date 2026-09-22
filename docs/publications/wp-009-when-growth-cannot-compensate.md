@@ -5,6 +5,11 @@
 **Date:** September 2026  
 **Author:** Alex Nikolov  
 
+!!! tip "Start concrete"
+    Floors delivered as access rather than cash depend on finding real capacity and moving value to it:
+    [CAN in Practice §1](../in-practice.md#1-a-harvest-that-would-otherwise-be-wasted).
+    Funding without drawing down cash is the [bridge wallet](../implementation/wp-010-bridge-wallet.md) ([WP-010](wp-010-bridge-wallet-participation-funding.md)).
+
 ---
 
 ## Abstract

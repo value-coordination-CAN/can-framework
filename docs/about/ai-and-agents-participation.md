@@ -97,6 +97,21 @@ Participation by any agent — human or artificial — will respect:
 4. Non-dominance: No single agent enforces unilateral change.  
 5. Co-evolution: Systems evolve through interaction.
 
+### The rule, and the code that enforces it
+
+A principle without an enforcing mechanism is a promise. Each row below names where the rule actually lives in the reference backend, so the rule and the code can be read together rather than in separate folders.
+
+| Principle | What enforces it |
+| --- | --- |
+| **Transparency** | Every agent record is a **derivation**: it names its inputs, its method and its version, and `GET /agents/records/{id}/recomputations` lets anyone re-run it. A derivation that no longer matches its inputs is **superseded automatically**, not quietly amended |
+| **Accountability** | Registration requires a **named human steward** who answers for the agent. There is no unowned agent. The open register (`GET /agents/register`) publishes every agent, its steward, its scopes and its participation, without authentication |
+| **Non-dominance** | A **throughput ceiling** on unreviewed work, per agent *and* per steward. When the queue is full the agent's **writes pause** — `writes_paused: true` on `GET /agents/me/queue`, visible to the human at `GET /agents/steward/queue`. The queue stops; the review is never skipped. The ceilings apply across all of a steward's agents, because review capacity is the scarce thing, not compute |
+| **No accumulation** | An agent **holds no entitlements**. It can act under a mandate; it cannot hold, earn or accrue anything on its own account. This is checked at the endpoint, not left to convention |
+| **Bounded authority** | Scopes and expiry are explicit, and revocation is immediate and unilateral by the steward. For spending, a [payment mandate](../implementation/wp-010-bridge-wallet.md) states purposes, per-payment and total ceilings, permitted payees and whether evidence is required — and a payment outside it is refused **before it reaches a rail**, with the reason recorded |
+| **Contestability** | The right to correction covers **derivations**, not only entries a human made. A person can dispute what an agent derived about them, and an independent reviewer resolves it |
+
+Terms and limits are published by the node itself at `GET /agents/rules`, without authentication, so an integrator reads them from the running system rather than from a document that may be out of date. Full reference: [Agent Integration API](../implementation/agent-integration-api.md). A worked example — an agent paying within a mandate and refused outside it — is in [CAN in Practice §3](../in-practice.md#3-an-agent-that-spends-and-is-refused).
+
 ---
 
 ## 7. Intelligence Is Not the Threat — Isolation Is

@@ -7,6 +7,11 @@
 **Builds on:** [WP-001](wp-001-network-value.md) (six degrees), [WP-005](wp-005-six-degree-network-ledger.md) (graph settlement), [WP-010](wp-010-bridge-wallet-participation-funding.md), [WP-011](wp-011-value-assurance-future-proofing.md)  
 **Implementation status:** all six steps of §10 are **built**, with path proofs ([Value Map API](../implementation/value-map-api.md)): a match is signed by the node that holds it, every relay signs the link it passes on, and the asker verifies the chain. What remains open is named there, and turns on carrying connections as signed objects.
 
+!!! tip "Start concrete"
+    What a shareable graph does for an actual neighbourhood:
+    [a harvest that would otherwise be wasted](../in-practice.md#1-a-harvest-that-would-otherwise-be-wasted),
+    with the calls that find the path and prove it. Code: [Value Map API](../implementation/value-map-api.md).
+
 ---
 
 ## Abstract

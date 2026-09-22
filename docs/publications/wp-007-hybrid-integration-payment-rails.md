@@ -6,6 +6,11 @@
 **Date:** March 2026  
 **Author:** Alex Nikolov  
 
+!!! tip "Start concrete"
+    Running alongside existing rails, in practice: the [bridge wallet](../implementation/wp-010-bridge-wallet.md)
+    holds fiat, modernised fiat and direct value in one place, and settles through a rail adapter.
+    Worked example: [What travels with the money](../in-practice.md#2-what-travels-with-the-money).
+
 ---
 
 ## Abstract

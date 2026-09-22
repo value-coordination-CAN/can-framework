@@ -15,6 +15,7 @@ These documents define CAN’s governance, safeguards, technical architecture, a
 
 ├─ 📄 [Policy Overview](about/POLICY_ABOUT.md)  
 ├─ ⚖️ [For Regulators](about/FOR_REGULATORS.md)  
+├─ 🛡️ [Safeguards in the Reference Implementation](about/SAFEGUARDS_IN_CODE.md)  
 ├─ 📄 [For Standards and Institutional Alignment](standards-and-institutional-alignment.md)  
 ├─ 🔧 [AI and Agent Participation](about/ai-and-agents-participation.md)  
 ├─ 🎓 [For Universities & Research](about/FOR_UNIVERSITIES_AND_RESEARCH.md)  

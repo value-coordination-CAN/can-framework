@@ -54,6 +54,10 @@ No permanent central authority is embedded in the system design.
 - Data security → encryption, least privilege, incident reporting
 - Elite capture → rotating governance, transparency, time-limited mandates
 - Function creep → legal boundaries, separation of powers, data minimisation
+- Sensitive personal data → explicit, revocable consent for every care factor; care may raise priority but never lower it
+- Self-certification and gaming → only entries attested with evidence count; every score is explained and appealable
+
+How the reference implementation enforces these is set out in [Safeguards in the Reference Implementation](SAFEGUARDS_IN_CODE.md).
 
 ---
 

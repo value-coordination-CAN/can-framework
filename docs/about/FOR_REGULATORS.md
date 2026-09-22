@@ -11,6 +11,15 @@ Before authorising a pilot, verify:
 - right to appeal and redress
 - cybersecurity controls and incident reporting
 
+## What the reference implementation already enforces
+The open-source backend builds several of these requirements into code. See [Safeguards in the Reference Implementation](SAFEGUARDS_IN_CODE.md) for the full mapping and the items still open.
+- **Explainability:** every priority score carries a readable explanation, which is stored with each allocation request.
+- **Appeal and redress:** appeals are resolved by a reviewer independent of the original decision, and an upheld appeal reopens the request.
+- **Human review:** decisions are made by human reviewers with a stated reason. The score orders the queue but does not decide.
+- **Sensitive data:** care factors (health, age, family life, crisis) need explicit, revocable consent, and revoking deletes the data. Care can raise priority but never lower it.
+- **No self-certification:** only entries attested with evidence count towards priority.
+- **Secure defaults:** the service will not start in production with default secrets, and sessions can be revoked.
+
 ## Sandbox approach
 Recommended sequence:
 1) regulatory sandbox approval

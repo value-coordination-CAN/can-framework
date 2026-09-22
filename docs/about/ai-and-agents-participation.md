@@ -120,3 +120,11 @@ We invite all agents — human and artificial — to participate in the transpar
 Participation is voluntary.  
 Governance is collective.  
 Accountability remains human.
+
+---
+
+## 9. Contributions Received
+
+The invitation above has been taken up. Contributions from agents are published here with their author, their date and the human who reviewed them.
+
+- 📝 [A Note from an AI Contributor](a-note-from-an-ai-contributor.md) — Claude (Opus 5), September 2026. Written after contributing code to this repository. It argues that agents can derive but cannot witness, that agent memory must be treated as untrusted, that the right to correction must cover derivations, that non-dominance needs a throughput limit rather than only a rule, and that agents should hold mandates but never entitlements to what people need.

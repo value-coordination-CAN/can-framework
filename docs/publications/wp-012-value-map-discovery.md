@@ -15,9 +15,25 @@ A CAN node knows a great deal about the value it holds: what the assets are, wha
 
 Between nodes, only one discovery mechanism is in general use: **price**. To find out whether something exists, what it is worth and who can supply it, we put it on a market and read the number. That works, and it throws away everything except the number.
 
-This paper proposes the **value map**: a node-local graph of value that can be **shared in slices** and **searched across degrees**, so that a need can find a capacity several hops away without a central index, without crawling, and without either side disclosing more than they choose. It is six degrees of separation applied not to acquaintance but to **value**: what exists, who can vouch for it, and how to reach it.
+This paper proposes the **value map**: a node-local graph of **needs and capacities**, with the evidence behind them, that can be **shared in slices** and **searched across degrees**, so that a need can find a capacity several hops away without a central index, without crawling, and without either side disclosing more than they choose. It is six degrees of separation applied not to acquaintance but to **value**: what exists, who can vouch for it, and how to reach it.
+
+Discovery is half of it. The other half is **traversal**: value moving along the path that was found — as access, capacity, contribution, participation or entitlement — with money settling only what must be money. The purpose is practical: turning capacity that merely exists into capacity people can actually use.
 
 > Price tells you what something costs. A value map tells you what exists, who stands behind it, and how to get there.
+
+---
+
+## 0. In simple terms
+
+Three sentences hold the whole idea.
+
+1. **Put needs and capacities on a graph.** Every node records what it has spare and what it lacks, with the evidence behind each, and how it is connected to others.
+2. **That graph is the discovery mechanism.** A need finds a capacity by travelling the graph a few hops, instead of by being priced on a market.
+3. **Then value travels the path that was found.** Not only the information about it: the thing itself moves — access to the space, the use of the equipment, the hours of work, the entitlement — with money settling only the part that has to be money.
+
+What this is for is plain enough: **unused capacity reaching people who need it**. A workshop standing empty and a boatbuilder with nowhere to work are a failure of discovery, not of production. Most of what people need already exists somewhere within a few degrees of them. The map is how they find it, and the path is how it reaches them.
+
+That is **value discovery**: finding what exists and what it is good for, rather than finding out what someone will pay.
 
 ---
 
@@ -110,6 +126,40 @@ Result:  "There is something matching, three hops away, via A and B."
 
 ---
 
+## 5a. Value that travels the path
+
+Discovery is only half of it. Once a path is found, **value moves along that same path**, and it need not turn into money to do so.
+
+| What travels | How it moves | Settles in money? |
+| --- | --- | --- |
+| **Access** | A use right issued to the party that needs it: the workshop, the unit, the training place | No |
+| **Capacity** | Hours, output or throughput committed for a period | Usually not |
+| **Contribution** | Work, materials, land use given to a project | No: it earns participation or access (WP-010) |
+| **Participation** | A verified stake in what the path helped create | Only when the holder chooses to settle it |
+| **Entitlement** | A floor entitlement redeemed against real capacity (WP-009) | No |
+| **Claim** | An invoice or receivable, pledged or settled | When the holder needs money |
+| **Money** | The residual: what none of the above can carry | Yes, on ordinary rails |
+
+Two properties matter.
+
+**It traverses hops.** The value that moves along a four-hop path can be created at one end and used at the other, with each hop in between contributing something — an introduction, an attestation, transport, a guarantee — and each contribution recorded as participation rather than as a fee skimmed in passing. This is WP-005's multi-hop enablement, now working **between** nodes rather than inside one.
+
+**It keeps its evidence.** What arrives is not an anonymous quantity but a thing with provenance: this access right, on these terms, over this asset, whose condition was attested by that surveyor. It can be verified on arrival, and it can be traced back if the terms are not met.
+
+### Aiding human capacity
+
+The point of moving value this way is what it does for people's ability to act.
+
+- A person with skills and no premises gets a workspace, so their capacity becomes output.
+- A community with time and knowledge contributes it and gains standing and access, instead of being consulted and ignored.
+- A displaced professional arrives with a portable record and is matched to work that needs exactly that, rather than starting from nothing.
+- A household's floor entitlement is redeemable against capacity that actually exists nearby (WP-009), rather than being cash chasing whatever price the market sets that year.
+- A small supplier reaches a project four hops away that would never have found them through a tender.
+
+In each case the constraint being lifted is the same: not a shortage of the thing, but the inability to find it and to move it without turning it into money first. **A map that carries needs and capacities, and paths that value can travel, turn latent capacity into human capacity.**
+
+---
+
 ## 6. Trust without scoring people
 
 The map must not become a reputation system in disguise. CAN's line holds here:
@@ -197,4 +247,4 @@ Each step is useful on its own, and none of them requires a central registry.
 
 ## 12. In one line
 
-Money made value findable by making it comparable, and lost everything else. A value map makes value findable by keeping its structure, and lets a need reach a capacity across four hops without a market, a platform or an index at the centre.
+Put needs and capacities on a graph, let a need find a capacity a few hops away, and let the value travel that path as access, capacity, contribution or a stake, with money settling only what must be money. Money made value findable by making it comparable, and lost everything else; a map makes it findable by keeping its structure — and turns capacity that exists into capacity people can use.

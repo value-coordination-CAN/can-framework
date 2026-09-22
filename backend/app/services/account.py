@@ -18,6 +18,16 @@ from app.db.models import (
     SubjectLink,
     User,
 )
+from app.bridge.models import (
+    BridgeTransfer,
+    Contribution,
+    Holding,
+    Pledge,
+    Project,
+    SupplierAgreement,
+    SupplierInvoice,
+    Wallet,
+)
 from app.models.network_edge import NetworkEdge
 from app.value.models import Asset, AssetEvidence, AssetShare, AssuranceRun
 
@@ -52,6 +62,23 @@ def export_account(db: Session, me: User) -> dict:
             }
             for a in db.query(Asset).filter(Asset.holder_user_id == me.id)
         ],
+        "wallet": _wallet_export(db, me.id),
+    }
+
+
+def _wallet_export(db: Session, uid: str) -> dict:
+    wallet = db.query(Wallet).filter(Wallet.user_id == uid).first()
+    if wallet is None:
+        return {}
+    holding_ids = [h.id for h in db.query(Holding.id).filter(Holding.wallet_id == wallet.id)]
+    return {
+        **_rows([wallet])[0],
+        "holdings": _rows(db.query(Holding).filter(Holding.wallet_id == wallet.id)),
+        "pledges": _rows(db.query(Pledge).filter(Pledge.holding_id.in_(holding_ids))) if holding_ids else [],
+        "transfers": _rows(db.query(BridgeTransfer).filter(BridgeTransfer.wallet_id == wallet.id)),
+        "projects_sponsored": _rows(db.query(Project).filter(Project.sponsor_user_id == uid)),
+        "contributions": _rows(db.query(Contribution).filter(Contribution.contributor_user_id == uid)),
+        "supplier_agreements": _rows(db.query(SupplierAgreement).filter(SupplierAgreement.supplier_user_id == uid)),
     }
 
 
@@ -106,6 +133,38 @@ def delete_account(db: Session, me: User) -> dict:
         AssetShare.grantee_user_id == uid
     ).delete(synchronize_session=False)
 
+    # Bridge wallet (WP-010): the person's wallet, and projects they sponsor
+    wallet = db.query(Wallet).filter(Wallet.user_id == uid).first()
+    project_ids = [p.id for p in db.query(Project.id).filter(Project.sponsor_user_id == uid)]
+    agreement_ids = [a.id for a in db.query(SupplierAgreement.id).filter(
+        or_(SupplierAgreement.supplier_user_id == uid,
+            SupplierAgreement.project_id.in_(project_ids) if project_ids else False)
+    )]
+    if agreement_ids:
+        db.query(SupplierInvoice).filter(SupplierInvoice.agreement_id.in_(agreement_ids)).delete(synchronize_session=False)
+    counts["supplier_agreements"] = db.query(SupplierAgreement).filter(
+        SupplierAgreement.id.in_(agreement_ids)
+    ).delete(synchronize_session=False) if agreement_ids else 0
+    counts["contributions"] = db.query(Contribution).filter(
+        or_(Contribution.contributor_user_id == uid,
+            Contribution.project_id.in_(project_ids) if project_ids else False)
+    ).delete(synchronize_session=False)
+    if wallet is not None:
+        holding_ids = [h.id for h in db.query(Holding.id).filter(Holding.wallet_id == wallet.id)]
+        if holding_ids:
+            db.query(Pledge).filter(Pledge.holding_id.in_(holding_ids)).delete(synchronize_session=False)
+        db.query(BridgeTransfer).filter(BridgeTransfer.wallet_id == wallet.id).delete(synchronize_session=False)
+        counts["holdings"] = db.query(Holding).filter(Holding.wallet_id == wallet.id).delete(synchronize_session=False)
+        db.query(Wallet).filter(Wallet.id == wallet.id).delete(synchronize_session=False)
+    db.query(Pledge).filter(Pledge.lender_user_id == uid).update({Pledge.lender_user_id: None}, synchronize_session=False)
+    if project_ids:
+        db.query(Holding).filter(Holding.project_id.in_(project_ids)).update(
+            {Holding.project_id: None}, synchronize_session=False
+        )
+    counts["projects_sponsored"] = db.query(Project).filter(
+        Project.sponsor_user_id == uid
+    ).delete(synchronize_session=False)
+
     if subject:
         alias = pseudonym(subject)
         counts["pseudonymised_attestations"] = db.query(LedgerEntry).filter(
@@ -120,6 +179,12 @@ def delete_account(db: Session, me: User) -> dict:
         counts["pseudonymised_dispute_resolutions"] = db.query(EntryDispute).filter(
             EntryDispute.resolved_by == subject
         ).update({EntryDispute.resolved_by: alias}, synchronize_session=False)
+        counts["pseudonymised_contribution_decisions"] = db.query(Contribution).filter(
+            Contribution.decided_by == subject
+        ).update({Contribution.decided_by: alias}, synchronize_session=False)
+        counts["pseudonymised_invoice_verifications"] = db.query(SupplierInvoice).filter(
+            SupplierInvoice.verified_by == subject
+        ).update({SupplierInvoice.verified_by: alias}, synchronize_session=False)
         counts["pseudonymised_asset_evidence"] = db.query(AssetEvidence).filter(
             AssetEvidence.attester_subject == subject
         ).update({AssetEvidence.attester_subject: alias}, synchronize_session=False)

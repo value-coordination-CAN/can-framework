@@ -72,10 +72,26 @@ agent (detect → interpret → recalculate → explain → act) acts only withi
 mandate. It can raise alerts and requests, and never moves value. Holders can share
 chosen categories with others.
 
-The reference UI is served at **http://localhost:8000/ui/**. The browser creates an Ed25519
-key for DID sign-in and keeps the private key in its own storage.
-
 Full description: [docs/implementation/wp-011-value-assurance.md](../docs/implementation/wp-011-value-assurance.md).
+
+## Bridge wallet (WP-010)
+
+`/bridge/*` implements WP-010: one wallet holding fiat, modernised fiat and direct value;
+projects funded by capital, in-kind contribution, pre-committed use and community
+contribution, each earning participation units or access rights; suppliers paid on verified
+delivery, optionally taking part of the margin as a verified stake; and pledging without
+sale, with double pledging refused.
+
+Settlement uses a **simulated rail**. Real instant-payment, tokenised-deposit and offline
+adapters are placeholders in `app/bridge/rails.py`; `GET /bridge/config` says which are
+implemented. Full description:
+[docs/implementation/wp-010-bridge-wallet.md](../docs/implementation/wp-010-bridge-wallet.md).
+
+## The reference UI
+
+Served at **http://localhost:8000/ui/**: value assurance at `/ui/` and the bridge wallet at
+`/ui/bridge.html`. The browser creates an Ed25519 key for DID sign-in and keeps the private
+key in its own storage.
 
 ## Main endpoints
 

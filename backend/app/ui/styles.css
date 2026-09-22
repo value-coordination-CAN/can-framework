@@ -42,7 +42,21 @@ code { font-size: .85em; background: var(--gold-soft); padding: 1px 5px; border-
 .whoami button { padding: 4px 10px; font-size: .8rem; color: #f6f4ee; border-color: rgba(255, 255, 255, .35); }
 .whoami code { background: rgba(255, 255, 255, .1); color: #e8d9a8; }
 
+.tabs { display: flex; gap: 4px; }
+.tabs a { color: #cfd8e1; text-decoration: none; font-size: .88rem; padding: 6px 12px; border-radius: 7px; border: 1px solid transparent; }
+.tabs a:hover { background: rgba(255, 255, 255, .08); }
+.tabs a.current { color: #f6f4ee; border-color: var(--gold); background: rgba(217, 181, 74, .14); }
+
 main { max-width: 1240px; margin: 20px auto; padding: 0 16px; }
+
+.layers { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 10px 0 14px; }
+@media (max-width: 760px) { .layers { grid-template-columns: 1fr; } }
+.layer { border: 1px solid var(--line); border-radius: 8px; padding: 9px 12px; background: var(--bg); }
+.layer b { display: block; font-family: Georgia, serif; }
+.layer ul { margin: 6px 0 0; padding-left: 16px; font-size: .88rem; }
+.agreement { border-top: 1px solid var(--line); padding: 9px 0; display: grid; gap: 6px; }
+.bar > i.alt { background: var(--navy); }
+@media (prefers-color-scheme: dark) { .bar > i.alt { background: #6d8aa6; } }
 .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 18px; }
 .stack { display: grid; gap: 14px; align-content: start; min-width: 0; }
 .layout { display: grid; grid-template-columns: 280px 1fr; gap: 16px; align-items: start; }

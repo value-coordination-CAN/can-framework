@@ -4,6 +4,7 @@
 **Version:** 0.1  
 **Date:** September 2026  
 **Author:** Alex Nikolov  
+**Reference implementation:** [WP-010 Bridge Wallet: code and UI](../implementation/wp-010-bridge-wallet.md)
 
 ---
 

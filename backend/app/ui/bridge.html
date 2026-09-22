@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CAN Bridge Wallet</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <span class="mark" aria-hidden="true">◆</span>
+    <div>
+      <h1>Bridge Wallet</h1>
+      <p class="sub">CAN reference UI · WP-010: funding projects through participation and access</p>
+    </div>
+  </div>
+  <nav class="tabs">
+    <a href="index.html">Value assurance</a>
+    <a href="bridge.html" class="current" aria-current="page">Bridge wallet</a>
+  </nav>
+  <div id="whoami" class="whoami"></div>
+</header>
+
+<main>
+  <section id="signin" class="card hidden">
+    <h2>Sign in</h2>
+    <p>CAN uses a <strong>decentralised identifier</strong> you hold yourself. This browser creates an Ed25519 key, keeps the private key in its own storage and signs a one-time challenge.</p>
+    <div class="row">
+      <button id="btn-did" class="primary">Sign in with this browser's key</button>
+      <button id="btn-new-did" class="ghost">Use a new key</button>
+    </div>
+    <details class="more">
+      <summary>Use an access token instead (attesters, reviewers)</summary>
+      <div class="row"><input id="token-input" placeholder="eyJ…" autocomplete="off"><button id="btn-token">Use token</button></div>
+    </details>
+    <p id="signin-msg" class="msg"></p>
+  </section>
+
+  <section id="profile" class="card hidden">
+    <h2>Create your CAN profile</h2>
+    <form id="form-profile" class="grid2">
+      <label>Display name<input name="display_name" required maxlength="200"></label>
+      <label>Email<input name="email" type="email" required></label>
+      <div class="span2"><button class="primary">Create profile</button></div>
+    </form>
+    <p id="profile-msg" class="msg"></p>
+  </section>
+
+  <section id="main" class="hidden">
+    <div class="card wallet-card">
+      <div class="head">
+        <div>
+          <h2>Your wallet</h2>
+          <p class="muted small">Three layers, one holder. Fiat is money as it is today. Modernised fiat is the same money in instant, tokenised or offline form. Direct value carries its own evidence and terms, and settles into money only when you need it. Your user id: <code id="my-id"></code></p>
+        </div>
+        <div class="head-actions">
+          <button id="btn-refresh" class="ghost">Refresh</button>
+          <button id="btn-export" class="ghost">Download my data</button>
+        </div>
+      </div>
+      <div id="layers" class="layers"></div>
+      <div id="holdings"></div>
+      <details class="more"><summary>Settlement rails</summary><div id="rails" class="small"></div></details>
+      <details class="more"><summary>Transfers between layers</summary><div id="transfers"></div></details>
+    </div>
+
+    <div class="layout" style="margin-top:14px">
+      <aside class="card side">
+        <h2>Projects</h2>
+        <div id="project-list" class="list"></div>
+        <h3>New project</h3>
+        <form id="form-project">
+          <label>Name<input name="name" required maxlength="200" placeholder="Regional development"></label>
+          <label>Target amount<input name="target_amount" type="number" min="1" step="any" value="1000000" required></label>
+          <label>Value of one participation unit<input name="unit_value" type="number" min="1" step="any" value="1000" required></label>
+          <label>Currency<input name="currency" value="USD" pattern="[A-Z]{3}" maxlength="3"></label>
+          <button class="primary">Create project</button>
+        </form>
+      </aside>
+
+      <div id="project-view" class="stack">
+        <div class="card empty">
+          <h2>Funded by everyone who contributes, not only by those with cash</h2>
+          <p>A project can be funded across all three layers. Capital, land use, equipment, expertise, labour, pre-committed use and community contribution can each earn <strong>participation</strong>, <strong>access</strong>, or both. Suppliers can take part of their margin as a verified stake instead of cash alone, and any verified stake can be pledged for liquidity without being sold.</p>
+          <p class="muted">Create a project or pick one on the left.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<template id="tpl-project">
+  <div class="card head">
+    <div>
+      <h2 data-f="name"></h2>
+      <p class="muted"><span data-f="role"></span> · <span data-f="status"></span></p>
+    </div>
+    <div class="head-actions"><button data-act="refresh" class="ghost">Refresh</button></div>
+  </div>
+
+  <div class="card" data-part="mix"></div>
+
+  <div class="card">
+    <h3>Contributions</h3>
+    <div data-part="contributions"></div>
+    <form data-part="form-contribution" class="grid3">
+      <label>What you offer<select name="source_type"></select></label>
+      <label>Description<input name="description" required maxlength="5000" placeholder="Use of two hectares for ten years"></label>
+      <label>Value offered<input name="offered_value" type="number" min="1" step="any" required></label>
+      <label>You want<select name="wants">
+        <option value="participation">Participation (a share of revenues)</option>
+        <option value="access">Access (a home, workspace, supply contract)</option>
+        <option value="both">Both</option>
+      </select></label>
+      <label>Access terms<input name="access_terms" maxlength="300" placeholder="a workshop unit for five years"></label>
+      <div class="span3 row"><button class="primary">Offer contribution</button><span class="muted small">The sponsor values it with evidence you can see, then issues units or access into your wallet.</span></div>
+    </form>
+  </div>
+
+  <div class="card" data-part="suppliers-card">
+    <h3>Suppliers</h3>
+    <p class="muted small">Paid on verified delivery. A supplier may take part of the margin as a verified stake in what they help build: future-proofed profit. Taking a stake is always their choice.</p>
+    <div data-part="agreements"></div>
+    <form data-part="form-supplier" class="grid3">
+      <label>Supplier user id<input name="supplier_user_id" required></label>
+      <label>Scope<input name="scope" required maxlength="5000" placeholder="groundworks"></label>
+      <label>Paid in cash (0–1)<input name="cash_share" type="number" min="0" max="1" step="0.05" value="0.8"></label>
+      <div class="span3"><button class="primary">Offer agreement</button></div>
+    </form>
+  </div>
+</template>
+
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script src="common.js"></script>
+<script src="bridge.js"></script>
+</body>
+</html>

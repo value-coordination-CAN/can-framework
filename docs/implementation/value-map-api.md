@@ -7,7 +7,7 @@
 
 Needs and capacities recorded on a node, shared as verifiable slices, and made findable by commitment without publishing a catalogue of what the node holds.
 
-**Built:** map items, slices, commitments, local matching, peering, forwarding across hops, and **introductions** — an offer that travels to the far end by itself, by several routes at once, where the far end decides and the near side then commits.
+**Built:** map items, slices, commitments, local matching, peering, forwarding across hops, introductions in which an offer travels to the far end by several routes at once, and **agreements** — a committed introduction becomes a recorded, verifiable agreement and, where both parties are here, a WP-010 contribution or supplier agreement.
 
 ---
 
@@ -209,6 +209,40 @@ A node may set `relay_policy: review` and decide each request by hand. It may; a
 
 ---
 
+## 5c. From a commitment to a stake
+
+An agreement should not evaporate into an email. Once an introduction is committed on both sides, either party records what was agreed:
+
+```http
+POST /map/introductions/{id}/agreement
+{ "kind": "contribution",              // contribution | access | supply
+  "terms": "400 hours of refit work over 18 months",
+  "value": 60000, "currency": "USD" }
+```
+
+That produces a **signed agreement document** (`profile: can.agreement.v1`) which both sides keep and anyone can verify, carrying the terms, the original offer and which introduction it came from.
+
+Then the project's sponsor turns it into a **stake** (WP-010):
+
+```http
+POST /map/agreements/{id}/link
+{ "project_id": "…", "counterpart_user_id": "…", "cash_share": 0.8 }
+```
+
+| Agreement kind | Becomes | In WP-010 |
+| --- | --- | --- |
+| `contribution` | An in-kind contribution | earns participation units once accepted |
+| `access` | A pre-committed use contribution | earns an access right on agreed terms |
+| `supply` | A supplier agreement | sets the split between cash and a verified stake |
+
+Both are created as **proposals**: the sponsor still decides the valuation, and a supplier still chooses whether to take part of the margin as a stake. Recording is done by a **party to the introduction**; attaching to a project is done by that **project's sponsor**; an agreement links once.
+
+### Across nodes, honestly
+
+`POST /map/agreements/import` takes the other side's document, verifies it, and stores it. It does **not** create a contribution there. A contributor on a node needs an identity someone local has vouched for, and a document arriving over the network is not that. So the agreement travels; turning it into a stake is a deliberate local act by a local party.
+
+---
+
 ## 6. Endpoints
 
 | Method | Path | Who |
@@ -228,6 +262,10 @@ A node may set `relay_policy: review` and decide each request by hand. It may; a
 | POST | `/map/introductions/{id}/decision` | the far end: a holder of the matching items (or the operator); a relay in review mode: the operator |
 | POST | `/map/introductions/{id}/commit` | the asker, once the far end has accepted |
 | POST | `/map/peer/introduction`, `/reply`, `/commit` | a peered node, by signature |
+| POST | `/map/introductions/{id}/agreement` | a party to the introduction |
+| GET | `/map/agreements` | the recorder; operators and auditors see all |
+| POST | `/map/agreements/{id}/link` | the project's sponsor: turns it into a WP-010 stake |
+| POST | `/map/agreements/import` | any user: store the other side's verified copy |
 
 ---
 
@@ -244,6 +282,6 @@ A node may set `relay_policy: review` and decide each request by hand. It may; a
 1. **Path proofs**, so an intermediary cannot invent or shorten a degree.
 2. **Shared rate-limit storage**, since the current limiter is per process.
 3. **Expiry sweeping**: offers past their time to live are treated as expired when read, but nothing clears them yet.
-4. **Turning a commitment into an agreement**: a committed introduction is the natural start of a project contribution or a supply agreement (WP-010), and could create one directly.
+4. **Cross-node identity**, so a contribution can name a counterpart on another node without anyone inventing an account for them. Until then, the agreement travels and the stake is created locally.
 
 Tests: `backend/tests/test_value_map.py` covers recording items, opt-in discoverability, commitment formation matching between holder and searcher, match and no-match answers carrying no contents, k-anonymity suppressing a single-item match, rate limiting, local matching by count, slice verification, redaction that still verifies, tamper detection, and the refusal to share what is not yours.

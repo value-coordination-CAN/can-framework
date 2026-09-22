@@ -5,7 +5,7 @@
 **Date:** September 2026  
 **Author:** Alex Nikolov  
 **Builds on:** [WP-001](wp-001-network-value.md) (six degrees), [WP-005](wp-005-six-degree-network-ledger.md) (graph settlement), [WP-010](wp-010-bridge-wallet-participation-funding.md), [WP-011](wp-011-value-assurance-future-proofing.md)  
-**Implementation status:** steps 1 to 5 of §10 are **built** — needs and capacities, shareable map slices, opt-in commitment discovery, peering, hop-limited forwarding, and introductions in which an offer travels to the far end by several routes at once ([Value Map API](../implementation/value-map-api.md)). Step 6, local query controls beyond the log, is still proposed.
+**Implementation status:** all six steps of §10 are **built** ([Value Map API](../implementation/value-map-api.md)), and a committed introduction now becomes a WP-010 contribution or supplier agreement. What remains open is named there: path proofs, cross-node identity, and reciprocity for carrying queries.
 
 ---
 
@@ -231,7 +231,7 @@ What this paper proposes adding, in order. **Steps 1 and 2 are now built** ([Val
 3. ✅ **Peering**: explicit peer relationships between nodes, each with its own trust weight, rate limit and log.
 4. ✅ **The query protocol**: signed, hop-limited, TTL-bounded queries returning a path and its confidence rather than contents. Path *proofs* remain open: today an intermediary is trusted not to misreport a degree.
 5. ✅ **Introductions**: an offer travels to the far end by itself, by several routes at once. Relays carry rather than gate; the far end decides; the near side then commits and only then becomes reachable. Carrying builds connection value, and not carrying is a missed opportunity rather than a fine.
-6. **Local query logs and controls**: what was asked of this node, by whom, and what it answered.
+6. ✅ **Local query logs**, and agreements: a committed introduction becomes a record and, where both parties are on one node, a contribution or supplier agreement under WP-010, so the work earns a stake rather than goodwill.
 
 Each step is useful on its own, and none of them requires a central registry.
 

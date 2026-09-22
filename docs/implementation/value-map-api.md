@@ -7,7 +7,7 @@
 
 Needs and capacities recorded on a node, shared as verifiable slices, and made findable by commitment without publishing a catalogue of what the node holds.
 
-**Built:** map items, slices, commitments, local matching. **Not yet built:** peering between nodes, query forwarding across degrees, and introductions. Today a query is answered by the node it is asked, and goes no further.
+**Built:** map items, slices, commitments, local matching, **peering and forwarding across hops**. **Not yet built:** consent-based introductions, so a match tells you a path exists and you still have to ask each hop yourself.
 
 ---
 
@@ -112,6 +112,56 @@ You can only share your own items and assets; trying to include someone else's i
 
 ---
 
+## 5a. Peering and forwarding across hops
+
+A node talks only to peers it has deliberately added. Peering is an operator's act:
+
+```http
+POST /map/peers        { "node_id": "node-b", "public_key": "…", "base_url": "https://…",
+                         "trust_weight": 0.8 }        # can_admin only
+GET/PATCH/DELETE /map/peers[/{id}]                    # suspend, reweight, remove
+```
+
+Then a query can travel:
+
+```http
+POST /map/query/federated
+{ "item_type": "capacity", "item_class": "covered_workshop",
+  "region": "GCC-E", "period": "2027-Q1", "max_degree": 3, "min_confidence": 0.1 }
+```
+
+```json
+{ "found": 2,
+  "results": [
+    { "node_id": "node-b", "path": ["node-a","node-b"],          "degree": 1, "confidence": 0.48, "match": true },
+    { "node_id": "node-c", "path": ["node-a","node-b","node-c"], "degree": 2, "confidence": 0.144, "match": true }
+  ],
+  "note": "Each result is a path and its confidence. To go further, ask the nodes on the path for an introduction." }
+```
+
+A result is **a path and a confidence**: how far away a match is, through which nodes, and how much the chain of trust weights supports. Nothing about what was found, whose it is, or how much of it there is.
+
+**Confidence** is the product of the trust weights along the path, discounted once per hop (`hop_decay`, 0.6 by default). Four hops of weak links are correctly worth very little.
+
+### What each hop enforces
+
+| Rule | How |
+| --- | --- |
+| **Peering is by relationship** | A node answers and forwards only for peers it has added; strangers get 403 |
+| **Requests are signed** | Each hop signs the body with its node key; the receiver verifies against the peer's public key on file |
+| **No loops** | A node already in the path neither answers nor is called again, in both directions |
+| **Hops are bounded** | The time to live decrements per hop and is capped by the receiving node's own `max_degree_limit`, whatever the sender asked |
+| **Each peer is rate-limited** | Per-peer hourly limit, separate from the per-caller limit |
+| **Everything is logged** | `GET /map/queries` (operator or auditor) shows direction, peer, path, time to live and result, with the commitment recorded as a **fingerprint**, so the log does not reveal what was sought either |
+
+A node with no signing key cannot forward: it can answer for itself, but it cannot speak in anyone's name.
+
+```http
+POST /map/peer/query      # peer-to-peer; signed envelope, no user account involved
+```
+
+---
+
 ## 6. Endpoints
 
 | Method | Path | Who |
@@ -120,9 +170,13 @@ You can only share your own items and assets; trying to include someone else's i
 | POST/GET | `/map/items` | the holder |
 | PATCH/DELETE | `/map/items/{id}` | the holder |
 | GET | `/map/items/{id}/commitment` | the holder: what a searcher can see |
-| POST | `/map/query` | any signed-in person or agent, rate-limited |
+| POST | `/map/query` | any signed-in person or agent, rate-limited: this node only |
+| POST | `/map/query/federated` | any signed-in person or agent: this node and its peers, returning paths |
 | GET | `/map/matches/{id}` | the holder: counts of matching items on this node |
 | POST | `/map/slice` | the holder |
+| POST/GET/PATCH/DELETE | `/map/peers[/{id}]` | the node operator (`can_admin`); auditors may read |
+| POST | `/map/peer/query` | a peered node, by signature; no user account |
+| GET | `/map/queries` | operator or auditor: what this node was asked, and by whom |
 
 ---
 
@@ -130,14 +184,15 @@ You can only share your own items and assets; trying to include someone else's i
 
 - **No listing of discoverable items.** Being findable is not the same as being published.
 - **No automatic introductions.** A match tells a searcher to ask. The holder decides whether to answer, and what slice to share.
-- **No cross-node forwarding yet.** A query stops at the node it is asked. Peering, hop limits, path proofs and consent-based introductions are steps 3 to 5 of WP-012 §10.
+- **No automatic contact.** A path says a match exists and names the nodes in between. Reaching the far end still means asking each hop, and every one of them may refuse.
+- **No path proofs yet.** An intermediary could in principle misreport a degree; proofs are noted below.
 - **No scoring.** Nothing here ranks holders, and matching is on attributes, not on reputation.
 
 ## 8. Next
 
-1. **Peering**: mutual node relationships, with their own limits and logs.
-2. **Forwarding**: hop-limited queries returning a path and its confidence rather than a single node's answer.
-3. **Introductions**: a consent-based request that every hop may refuse, ending in a shared slice or in nothing.
-4. **Shared rate-limit storage**, since the current limiter is per process.
+1. **Introductions**: a consent-based request carried along a path, ending in a shared slice or in nothing.
+2. **Path proofs**, so an intermediary cannot invent or shorten a degree.
+3. **Shared rate-limit storage**, since the current limiter is per process.
+4. **Reciprocity**: forwarding costs something to carry, and at scale that needs an answer.
 
 Tests: `backend/tests/test_value_map.py` covers recording items, opt-in discoverability, commitment formation matching between holder and searcher, match and no-match answers carrying no contents, k-anonymity suppressing a single-item match, rate limiting, local matching by count, slice verification, redaction that still verifies, tamper detection, and the refusal to share what is not yours.

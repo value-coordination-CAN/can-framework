@@ -6,9 +6,18 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
 from app.agents.auth import ROLE_AGENT
-from app.core.auth import ROLE_AUDITOR, ROLE_USER, get_current_user, require_any_role
+from app.core.auth import ROLE_ADMIN, ROLE_AUDITOR, ROLE_USER, get_current_user, require_any_role
+from app.core.config import settings
 from app.db.models import User
 from app.db.session import get_db
+from app.value.forwarding import (
+    check_peer_rate,
+    commitment_fingerprint,
+    search,
+    seal_confidences,
+    verify_request,
+)
+from app.value.peer_models import Peer, QueryLog
 from app.value.access import visible_assets
 from app.value.commitments import (
     ATTRIBUTES,
@@ -197,6 +206,147 @@ def export_slice(payload: SliceIn, db: Session = Depends(get_db), me: User = Dep
     if include and not include <= set(ITEM_TYPES) | {"asset"}:
         raise HTTPException(status_code=422, detail=f"include must be from {sorted(set(ITEM_TYPES) | {'asset'})}")
     return build_map_slice(db, me.id, items, assets, include=include, purpose=payload.purpose)
+
+
+# --- peering and forwarding (WP-012 §5) ------------------------------------------------
+
+class PeerIn(BaseModel):
+    node_id: str = Field(..., min_length=1, max_length=100)
+    public_key: str = Field(..., min_length=20, max_length=100, description="base64url Ed25519")
+    base_url: str | None = Field(default=None, max_length=300, description="Omit for inbound-only peers")
+    trust_weight: float = Field(0.5, ge=0, le=1, description="How much this hop is worth")
+    max_queries_per_hour: int | None = Field(default=None, ge=1, le=100000)
+    note: str | None = Field(default=None, max_length=2000)
+
+
+class PeerUpdate(BaseModel):
+    trust_weight: float | None = Field(default=None, ge=0, le=1)
+    status: str | None = Field(default=None, pattern="^(active|suspended)$")
+    base_url: str | None = Field(default=None, max_length=300)
+    max_queries_per_hour: int | None = Field(default=None, ge=1, le=100000)
+    note: str | None = Field(default=None, max_length=2000)
+
+
+class PeerOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    node_id: str
+    base_url: str | None
+    public_key: str
+    trust_weight: float
+    status: str
+    max_queries_per_hour: int | None
+    note: str | None
+    last_seen_at: object | None
+
+
+class FederatedQueryIn(QueryIn):
+    max_degree: int | None = Field(default=None, ge=0, le=6)
+    min_confidence: float = Field(0.0, ge=0, le=1)
+
+
+@router.post("/peers", response_model=PeerOut, status_code=201)
+def add_peer(payload: PeerIn, db: Session = Depends(get_db), principal=Depends(require_any_role(ROLE_ADMIN))):
+    """Peering is deliberate: the node operator adds each peer, with its own weight and limit."""
+    if payload.node_id == settings.NODE_ID:
+        raise HTTPException(status_code=422, detail="a node cannot peer with itself")
+    if db.query(Peer).filter(Peer.node_id == payload.node_id).first():
+        raise HTTPException(status_code=409, detail="already a peer")
+    peer = Peer(added_by=principal["sub"], **payload.model_dump())
+    db.add(peer)
+    db.commit()
+    db.refresh(peer)
+    return peer
+
+
+@router.get("/peers", response_model=list[PeerOut])
+def list_peers(db: Session = Depends(get_db), principal=Depends(require_any_role(ROLE_ADMIN, ROLE_AUDITOR))):
+    return db.query(Peer).order_by(Peer.created_at).all()
+
+
+@router.patch("/peers/{peer_id}", response_model=PeerOut)
+def update_peer(peer_id: str, payload: PeerUpdate, db: Session = Depends(get_db),
+                principal=Depends(require_any_role(ROLE_ADMIN))):
+    peer = db.get(Peer, peer_id)
+    if not peer:
+        raise HTTPException(status_code=404, detail="peer not found")
+    for field, value in payload.model_dump(exclude_none=True).items():
+        setattr(peer, field, value)
+    db.commit()
+    db.refresh(peer)
+    return peer
+
+
+@router.delete("/peers/{peer_id}")
+def remove_peer(peer_id: str, db: Session = Depends(get_db), principal=Depends(require_any_role(ROLE_ADMIN))):
+    peer = db.get(Peer, peer_id)
+    if not peer:
+        raise HTTPException(status_code=404, detail="peer not found")
+    db.delete(peer)
+    db.commit()
+    return {"removed": peer_id}
+
+
+@router.post("/query/federated")
+def federated_query(payload: FederatedQueryIn, db: Session = Depends(get_db),
+                    principal=Depends(require_any_role(ROLE_USER, ROLE_AGENT, ROLE_AUDITOR))):
+    """Ask this node and, through it, its peers: how far away is a match, and how much
+    confidence does the chain of trust weights support? Paths come back, never contents."""
+    rules = discovery_rules()
+    target = payload.commitment
+    if not target:
+        if not (payload.item_type and payload.item_class and payload.region and payload.period):
+            raise HTTPException(status_code=422,
+                                detail="give a commitment, or all of item_type, item_class, region and period")
+        target = commitment(payload.item_type, payload.item_class, payload.region, payload.period)
+    try:
+        check_rate(principal["sub"])
+    except PermissionError as e:
+        raise HTTPException(status_code=429, detail=str(e), headers={"Retry-After": "3600"})
+
+    ttl = payload.max_degree if payload.max_degree is not None else int(rules.get("max_degree_default", 3))
+    result = seal_confidences(search(db, commitment=target, ttl=ttl, path=[], asked_by=principal["sub"],
+                                     direction="local"))
+    results = [r for r in result["results"] if (r.get("confidence") or 0) >= payload.min_confidence]
+    return {
+        "commitment": target,
+        "epoch": current_epoch(),
+        "asked": {"max_degree": ttl, "min_confidence": payload.min_confidence},
+        "found": len(results),
+        "results": results,
+        "note": "Each result is a path and its confidence. To go further, ask the nodes on the path "
+                "for an introduction; every hop, and the holder, may refuse.",
+    }
+
+
+@router.post("/peer/query")
+def peer_query(envelope: dict, db: Session = Depends(get_db)):
+    """Peer-to-peer: a signed query from another node. No user account is involved."""
+    try:
+        peer = verify_request(db, envelope)
+        check_peer_rate(peer)
+    except PermissionError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    body = envelope.get("body") or {}
+    target, ttl, path = body.get("commitment"), int(body.get("ttl", 0)), list(body.get("path") or [])
+    if not target or len(target) != 64:
+        raise HTTPException(status_code=422, detail="a commitment is required")
+    if settings.NODE_ID in path:
+        return {"node_id": settings.NODE_ID, "results": [], "note": "already visited: not answering twice"}
+    return seal_confidences(search(db, commitment=target, ttl=ttl, path=path, asked_by=None,
+                                   direction="inbound", peer_node_id=peer.node_id))
+
+
+@router.get("/queries")
+def query_log(limit: int = Query(100, ge=1, le=500), db: Session = Depends(get_db),
+              principal=Depends(require_any_role(ROLE_ADMIN, ROLE_AUDITOR))):
+    """Who has been asking this node what. Commitments only: the log does not reveal
+    what was being looked for either."""
+    rows = db.query(QueryLog).order_by(QueryLog.created_at.desc()).limit(limit).all()
+    return [{"id": r.id, "created_at": r.created_at, "direction": r.direction, "peer_node_id": r.peer_node_id,
+             "asked_by": r.asked_by, "commitment": commitment_fingerprint(r.commitment), "ttl": r.ttl,
+             "path": r.path, "matched": r.matched, "results": r.results} for r in rows]
 
 
 @router.get("/matches/{item_id}")

@@ -17,4 +17,4 @@ Next (recommended):
 - Add rate limiting (Redis) to auth endpoints
 - Move DID session tokens to asymmetric signing (EdDSA/ES256) if other services must verify them
 - Add attester accreditation (which attesters may record which metrics)
-- Add retention and erasure rules for ledger entries, and a full account-deletion endpoint
+- Add retention periods for ledger entries, snapshots and deletion records (account deletion and export are implemented)

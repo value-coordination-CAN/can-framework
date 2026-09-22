@@ -70,9 +70,15 @@ Every care factor (health, parenting, burnout, age, crisis) is sensitive and is 
 | --- | --- | --- |
 | POST | `/identity/users` | any authenticated identity (one profile each) |
 | GET | `/identity/users/me` | user |
+| GET | `/identity/users/me/export` | user (right of access) |
+| DELETE | `/identity/users/me?confirm=true` | user (erase account; others' records keep a pseudonym) |
 | GET/PUT | `/identity/me/care-consent` | user |
 | POST | `/ledger/entries` | user (self) / attester (others, with evidence) |
 | GET | `/ledger/entries/{user_id}` | owner, reviewer, auditor |
+| DELETE | `/ledger/entries/{id}` | owner (self-reported entries only) |
+| POST | `/ledger/entries/{id}/disputes` | the person the entry is about |
+| GET | `/ledger/disputes`, `/ledger/disputes/{id}` | reviewer/auditor; owner for their own |
+| POST | `/ledger/disputes/{id}/resolve` | a reviewer other than the person and the original attester |
 | GET | `/score/{user_id}` | owner, reviewer, auditor |
 | POST | `/allocation/requests` | user |
 | GET | `/allocation/requests` | reviewer, auditor |

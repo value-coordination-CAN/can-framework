@@ -2,7 +2,7 @@
 
 CAN's policy documents promise rights and safeguards. This page shows which of them the reference backend enforces in code, and which remain open. It is written for regulators, auditors, researchers and pilot sponsors.
 
-**Status:** reflects the backend as of September 2026 ([pull request #3](https://github.com/value-coordination-CAN/can-framework/pull/3)).
+**Status:** reflects the backend as of September 2026, including the correction and account-deletion endpoints.
 
 ---
 
@@ -14,7 +14,7 @@ The test for any CAN deployment is **standing**: does the person affected hold t
 | --- | --- |
 | Do they hold the record? | Every ledger entry about a person is visible to them (`GET /ledger/entries/{their id}`), including who recorded it and whether it counts |
 | Do they see the reasoning? | Every score carries an explanation: formula, weights, per-metric means and counts, and exclusions. It is stored with each allocation request |
-| Can they contest it? | Any decision can be appealed. Appeals are resolved by a reviewer who is neither the appellant nor the original decision-maker, and an upheld appeal reopens the request |
+| Can they contest it? | Any decision can be appealed, and any entry about them can be disputed. Both are resolved by a reviewer independent of the person and of whoever made the original decision or entry |
 
 ---
 
@@ -25,8 +25,9 @@ The test for any CAN deployment is **standing**: does the person affected hold t
 | Right to explanation | ✅ Explanation returned with every score and stored with every request |
 | Right to appeal | ✅ Appeal, list, read and independent resolution, one open appeal per request |
 | Right to human review | ✅ Allocation decisions are made by human reviewers with a stated reason. The score orders the queue but does not decide |
-| Right to withdrawal | 🟡 Partly: care consent can be withdrawn (entries deleted), imported connections can be deleted, and sessions can be revoked. Full account deletion is not yet implemented |
-| Right to correction | 🟡 Partly: the person can see every entry and appeal decisions. A dedicated endpoint to dispute and correct a single entry is not yet implemented |
+| Right to correction | ✅ A person can dispute any attested entry about them, optionally proposing a value. An independent reviewer (not the person, not the original attester) corrects it, removes it or rejects the dispute. Corrections never overwrite history: the old entry is marked superseded and the corrected entry points back to it. Disputed entries keep counting until resolved, so disputing cannot be used to game a score. Self-reported entries can simply be deleted |
+| Right of access | ✅ `GET /identity/users/me/export` returns everything held about the person in one document |
+| Right to withdrawal | ✅ Care consent can be withdrawn (entries deleted), imported connections deleted and sessions revoked. `DELETE /identity/users/me?confirm=true` erases the profile and all data about the person. Records that belong to other people (entries they attested, decisions they made) keep a pseudonym in place of their identity, and an audit record with counts only is kept |
 
 ---
 
@@ -48,7 +49,6 @@ The test for any CAN deployment is **standing**: does the person affected hold t
 
 ## Open items before any live pilot
 
-- An endpoint to dispute and correct individual entries, and full account deletion.
 - Attester accreditation: which attesters may record which metrics.
 - Retention periods and erasure rules for ledger entries and snapshots.
 - Rate limiting on authentication endpoints.

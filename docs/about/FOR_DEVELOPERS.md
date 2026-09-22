@@ -98,9 +98,15 @@ Health, parenting, burnout, age and crisis are sensitive data. Each one needs th
 | POST | `/auth/did/verify`, `/auth/did/logout` | anyone / DID session |
 | POST | `/identity/users` | any authenticated identity (one profile each) |
 | GET | `/identity/users/me`, `/identity/users/{id}` | user (others' emails are hidden) |
+| GET | `/identity/users/me/export` | user: everything held about them |
+| DELETE | `/identity/users/me?confirm=true` | user: erase their account and data |
 | GET/PUT | `/identity/me/care-consent` | user |
 | POST | `/ledger/entries` | user (self) / attester (others, with evidence) |
 | GET | `/ledger/entries/{user_id}` | owner, reviewer, auditor |
+| DELETE | `/ledger/entries/{id}` | owner, for their own self-reported entries |
+| POST | `/ledger/entries/{id}/disputes` | the person the entry is about |
+| GET | `/ledger/disputes`, `/ledger/disputes/{id}` | reviewer and auditor; owner for their own |
+| POST | `/ledger/disputes/{id}/resolve` | a reviewer who is neither the person nor the original attester |
 | GET | `/score/{user_id}` | owner, reviewer, auditor |
 | POST | `/allocation/requests` | user |
 | GET | `/allocation/requests` | reviewer, auditor (queue ordered by priority) |
@@ -111,5 +117,10 @@ Health, parenting, burnout, age and crisis are sensitive data. Each one needs th
 | POST | `/appeals/{id}/resolve` | an independent reviewer |
 | POST/DELETE | `/integrations/linkedin/import` | user |
 | GET | `/network/path` | user (from themselves) |
+
+### Corrections and account deletion
+
+- **Disputes:** a person disputes an attested entry (`reason`, optional `proposed_value`). The entry keeps counting until a reviewer resolves the dispute as `corrected` (with `corrected_value`), `removed` or `rejected`. Corrected and removed entries are marked `superseded` and stop counting. A correction is a new attested entry whose `supersedes_id` points to the original. History is never overwritten.
+- **Deletion:** `DELETE /identity/users/me?confirm=true` removes the profile, ledger entries, disputes, consents, snapshots, requests, appeals, network edges, DID sessions and subject links. Where the person appears on *other people's* records (as attester, decision-maker or dispute resolver), their identity is replaced by a keyed pseudonym (`deleted:…`). A `deletion_records` row keeps counts only, for audit.
 
 See [Safeguards in the Reference Implementation](SAFEGUARDS_IN_CODE.md) for how these map onto CAN's rights and principles.

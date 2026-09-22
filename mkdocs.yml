@@ -29,6 +29,7 @@ nav:
   - Policy:
       - Overview: about/POLICY_ABOUT.md
       - Regulators: about/FOR_REGULATORS.md
+      - Safeguards in Code: about/SAFEGUARDS_IN_CODE.md
       - Universities: about/FOR_UNIVERSITIES_AND_RESEARCH.md
       - Developers: about/FOR_DEVELOPERS.md
   - Integrations:

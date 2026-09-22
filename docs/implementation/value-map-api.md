@@ -160,6 +160,26 @@ A node with no signing key cannot forward: it can answer for itself, but it cann
 POST /map/peer/query      # peer-to-peer; signed envelope, no user account involved
 ```
 
+### Path proofs: a degree cannot be shortened
+
+Without proofs, a node in the middle can say whatever it likes: *there is a match, one hop away, through me*. That is how a helpful-looking intermediary becomes a toll gate. Every result carries a proof, and the asking node verifies it:
+
+- a **match attestation**, signed by the node that actually holds a match, over the query id, the commitment and its own node id. Nobody else can produce it without that node's key;
+- a **chain of hop attestations**, one per relay, each signing the node it received the answer from and a **hash of the inner proof**, so a link cannot be dropped without breaking the chain.
+
+Each result comes back with `proven: true|false` and, where it fails, `proof_problems` saying why. Ask with `proven_only: true` to drop anything that does not stand up.
+
+| Attempt | What happens |
+| --- | --- |
+| Claim a match at a node you do not control | Refused: the attestation is not signed by the node the path ends at |
+| Shorten a three-hop path to one | Refused: the claimed path needs fewer relay signatures than the chain carries |
+| Forge a peer's signature | Refused: the key does not match the one on file for that peer |
+| Replay a proof from an earlier question | Refused: attestations are bound to the query id |
+| Drop a link from the middle | Refused: the next signature commits to the hash of what it received |
+| Answer without signing at all | Carried, but marked unproven — a node with no key can still take part |
+
+An intermediary can still invent *extra* nodes beyond itself, which only makes a path look longer and weaker. What it cannot do is appear closer than it is, or speak for a node whose key it does not hold.
+
 ---
 
 ## 5b. Introductions: the offer travels, the far end decides, the near side commits
@@ -274,14 +294,24 @@ Both are created as **proposals**: the sponsor still decides the valuation, and 
 - **No listing of discoverable items.** Being findable is not the same as being published.
 - **No automatic introductions.** A match tells a searcher to ask. The holder decides whether to answer, and what slice to share.
 - **No contact without consent.** An offer travels on its own, but nobody's details do. The far end reveals contact only by accepting; the asker only by committing.
-- **No path proofs yet.** An intermediary could in principle misreport a degree.
+- **No protection against invented extra nodes.** A proof stops a path being shortened or a match being borrowed; a node may still pad a path with nodes of its own, which only makes it look further away.
 - **No scoring of people.** Connection value sits on **peer nodes**, from what they carried and connected. Nothing ranks holders, and matching is on attributes, never on reputation.
 
 ## 8. Next
 
-1. **Path proofs**, so an intermediary cannot invent or shorten a degree.
-2. **Shared rate-limit storage**, since the current limiter is per process.
-3. **Expiry sweeping**: offers past their time to live are treated as expired when read, but nothing clears them yet.
-4. **Cross-node identity**, so a contribution can name a counterpart on another node without anyone inventing an account for them. Until then, the agreement travels and the stake is created locally.
+1. **Shared rate-limit storage**, since the current limiter is per process.
+2. **Expiry sweeping**: offers past their time to live are treated as expired when read, but nothing clears them yet.
+3. **Connections as signed objects** — see below. That is what closes the last two gaps.
+
+### Where the remaining gaps actually close
+
+Two things are still awkward, and both come from the same root:
+
+- **Cross-node identity.** An agreement travels, but the stake is created locally, because a contributor here needs an identity someone here has vouched for.
+- **Reciprocity.** Carrying queries and offers costs something, and at scale goodwill is not a mechanism.
+
+Neither is really a protocol gap. They close when **the connections themselves are signed, portable objects** rather than rows in one node's database: an edge that carries its own identity, terms and provenance can be verified by whoever receives it, so a counterpart needs no local account to be named in a contribution; and a hop's carrying can be recorded as an object in its own right, which settles later like any other contribution (WP-010) instead of depending on reciprocal favour.
+
+The framework already leaves the seam: `profile` is a field on every document, and the value, map and agreement profiles here are one implementation of the idea. A deployment may carry another object format — including a proprietary one — through the same endpoints, without changing the protocol.
 
 Tests: `backend/tests/test_value_map.py` covers recording items, opt-in discoverability, commitment formation matching between holder and searcher, match and no-match answers carrying no contents, k-anonymity suppressing a single-item match, rate limiting, local matching by count, slice verification, redaction that still verifies, tamper detection, and the refusal to share what is not yours.

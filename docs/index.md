@@ -40,6 +40,7 @@ These documents define CAN’s governance, safeguards, technical architecture, a
 - 📘 [WP-010: The Bridge Wallet as Leverage — Funding Projects Through Participation and Access](publications/wp-010-bridge-wallet-participation-funding.md)
 - 📘 [WP-011: Value Assurance — Verifying and Future-Proofing Value in Transition](publications/wp-011-value-assurance-future-proofing.md)
 - 📘 [WP-012: The Value Map — Needs and Capacities on a Graph, Discovery Across Degrees, and Value That Travels](publications/wp-012-value-map-discovery.md)
+- 📘 [WP-013: Trusted Transaction Objects — Proof, Mandate and Offline State around a Shared Settlement Asset](publications/wp-013-trusted-transaction-objects.md)
 
 ---
 
@@ -62,6 +63,7 @@ Working code that turns the papers into infrastructure anyone can run and test.
 - **The bridge as leverage:** one wallet for fiat, modernised fiat and direct value; projects funded through participation and access; suppliers with future-proofed profit (WP-010).
 - **Value assurance:** evidenced, continuously updated value for assets in transition (WP-011).
 - **The value map:** needs and capacities on a shareable graph; a need finds a capacity a few hops away, and value travels that path as access, contribution or a stake, turning capacity that exists into capacity people can use (WP-012).
+- **Trusted transaction objects:** a settlement asset standardises how money moves; what is still missing is the object around it — authority, purpose, evidence, conditions, offline state (WP-013).
 - **Safeguards:** neither 1984 nor The Hunger Games. The standing test: the person affected holds the record, sees the reasoning and can contest it.
 
 ---

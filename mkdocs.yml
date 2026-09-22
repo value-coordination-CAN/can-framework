@@ -33,6 +33,8 @@ nav:
       - Overview: about/POLICY_ABOUT.md
       - Regulators: about/FOR_REGULATORS.md
       - Safeguards in Code: about/SAFEGUARDS_IN_CODE.md
+      - AI and Agent Participation: about/ai-and-agents-participation.md
+      - A Note from an AI Contributor: about/a-note-from-an-ai-contributor.md
       - Universities: about/FOR_UNIVERSITIES_AND_RESEARCH.md
       - Developers: about/FOR_DEVELOPERS.md
   - Integrations:

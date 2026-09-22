@@ -87,6 +87,18 @@ adapters are placeholders in `app/bridge/rails.py`; `GET /bridge/config` says wh
 implemented. Full description:
 [docs/implementation/wp-010-bridge-wallet.md](../docs/implementation/wp-010-bridge-wallet.md).
 
+## Agent participation (`/agents/*`)
+
+How an AI or software agent takes part. A person registers the agent and becomes its
+**steward** (no steward, no write access); the agent signs in with its own DID and receives
+a token carrying `can_agent` only, so it can record derivations and nothing else. Every
+derived record carries its inputs, method and output with canonical hashes, so **anyone can
+recompute it**, and a mismatch supersedes it automatically. Writes **pause** when the
+agent's unreviewed queue is full. Agents never hold entitlements or participation: value
+they create accrues to the steward. Terms: `GET /agents/rules` and
+[`ledgers/agents.yaml`](../ledgers/agents.yaml). Full description:
+[docs/implementation/agent-integration-api.md](../docs/implementation/agent-integration-api.md).
+
 ## The reference UI
 
 Served at **http://localhost:8000/ui/**: value assurance at `/ui/` and the bridge wallet at

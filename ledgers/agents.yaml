@@ -1,0 +1,40 @@
+# Rules for AI and software agents participating in CAN.
+# Public and versioned, so any steward, reviewer or agent can read the terms it works under.
+# Background: docs/about/a-note-from-an-ai-contributor.md
+
+agents:
+  # What an agent may record. Agents derive; they never attest to first-hand fact.
+  record_kinds:
+    valuation: "A value or scenario result derived from recorded evidence"
+    score: "A priority or reliability figure derived from recorded entries"
+    summary: "A restatement or aggregation of records"
+    check: "A consistency or anomaly finding over records"
+    recommendation: "A proposed action for a human or steward to decide"
+    recompute: "An independent recomputation of another agent's derived record"
+
+  # Scopes a steward can grant. An agent may only record kinds inside its scopes.
+  scopes:
+    value.read: "Read asset evidence and valuations the steward can see"
+    value.derive: "Record derived valuations and checks about assets"
+    score.derive: "Record derived scores and checks about allocation records"
+    general.derive: "Record summaries, checks and recommendations"
+
+  # Non-dominance is a throughput question, not only a rule (see the note, section 4).
+  # When an agent's unreviewed queue reaches the ceiling, its writes pause.
+  # The queue stops; the review is never skipped.
+  limits:
+    max_unreviewed_records: 50
+    max_records_per_hour: 500
+    max_input_bytes: 200000
+
+  # Agents may hold mandates. They never hold entitlements to what people need.
+  holdings:
+    may_hold_mandate: true
+    may_hold_entitlement: false
+    may_hold_participation: false
+    value_accrues_to: steward
+
+  # A derived record must be reproducible from its stated inputs.
+  recomputation:
+    required_fields: [inputs, output, method]
+    on_mismatch: supersede   # a record that fails recomputation is superseded automatically

@@ -12,6 +12,8 @@ from app.core.config import validate_settings
 from app.routers.linkedin_integration import router as linkedin_router
 from app.routers.network_paths import router as network_router
 from app.services.ledger_config import load_ledger_config
+from app.agents.config import load_agent_rules
+from app.agents.routes import router as agents_router
 from app.bridge.routes import router as bridge_router
 from app.value.engine import load_value_config
 from app.value.routes import router as value_router
@@ -24,6 +26,7 @@ async def lifespan(_: FastAPI):
     validate_settings()
     load_ledger_config()  # fail fast on invalid ledger YAML
     load_value_config()
+    load_agent_rules()
     yield
 
 
@@ -33,6 +36,7 @@ app.include_router(linkedin_router, prefix="/integrations/linkedin", tags=["link
 app.include_router(network_router, prefix="/network", tags=["network"])
 app.include_router(value_router, prefix="/value", tags=["value-assurance (WP-011)"])
 app.include_router(bridge_router, prefix="/bridge", tags=["bridge-wallet (WP-010)"])
+app.include_router(agents_router, prefix="/agents", tags=["agent participation"])
 
 # Reference UI (static, no build step): http://localhost:8000/ui/
 app.mount("/ui", StaticFiles(directory=UI_DIR, html=True), name="ui")

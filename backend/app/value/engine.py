@@ -35,6 +35,7 @@ class ValueConfig:
     maintenance: dict
     exchange: dict
     discovery: dict
+    introductions: dict
 
 
 @lru_cache
@@ -72,6 +73,7 @@ def load_value_config(config_dir: str | None = None) -> ValueConfig:
         maintenance=raw.get("maintenance", {"stale_evidence_days": 180, "reassess_after_days": 30, "min_confidence": 0.6}),
         exchange=raw.get("exchange", {"trusted_nodes": {}}),
         discovery=raw.get("discovery", {"k_anonymity": 2, "epoch_days": 7, "max_queries_per_hour": 120}),
+        introductions=raw.get("introductions", {"ttl_hours": 72, "max_message_chars": 500, "max_open_per_caller": 20}),
     )
 
 

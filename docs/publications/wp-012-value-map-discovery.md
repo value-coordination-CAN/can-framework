@@ -5,7 +5,7 @@
 **Date:** September 2026  
 **Author:** Alex Nikolov  
 **Builds on:** [WP-001](wp-001-network-value.md) (six degrees), [WP-005](wp-005-six-degree-network-ledger.md) (graph settlement), [WP-010](wp-010-bridge-wallet-participation-funding.md), [WP-011](wp-011-value-assurance-future-proofing.md)  
-**Implementation status:** steps 1 to 4 of §10 are **built** — needs and capacities, shareable map slices, opt-in commitment discovery, peering and hop-limited forwarding that returns a path and its confidence ([Value Map API](../implementation/value-map-api.md)). Steps 5 and 6, consent-based introductions and local query controls, are still proposed.
+**Implementation status:** steps 1 to 5 of §10 are **built** — needs and capacities, shareable map slices, opt-in commitment discovery, peering, hop-limited forwarding, and introductions in which an offer travels to the far end by several routes at once ([Value Map API](../implementation/value-map-api.md)). Step 6, local query controls beyond the log, is still proposed.
 
 ---
 
@@ -115,7 +115,7 @@ Result:  "There is something matching, three hops away, via A and B."
 
 **What a result carries:** the degree, the path's confidence, and the intermediaries needed to make an introduction. **What it does not carry:** the holder, the contents, the quantity, or any identity at the far end.
 
-**Introduction by consent.** To go further, the searcher asks the intermediaries to pass a request along. Each hop can refuse. The far end decides whether to answer at all, and if it answers, what slice to share. Nobody is contactable merely for being on a graph.
+**Introduction by consent.** To go further the searcher makes an **offer**, and it travels the path by itself: intermediaries carry rather than gate, and an offer can take several routes at once so no single hop can stop it. The far end decides whether to answer at all, and if it answers, what slice to share. Nobody is contactable merely for being on a graph: the far end gives contact by accepting, the asker by committing, and neither before. A hop that will not carry loses nothing, but builds nothing either — carrying is what builds connection value, so over time offers flow through the nodes that connect people.
 
 **Confidence decays with distance**, as it already does in the reference implementation: a path's confidence is the product of its edge weights, discounted once per hop. An attested edge weighs more than a self-declared one. Four hops of weak edges is correctly worth very little.
 
@@ -230,7 +230,7 @@ What this paper proposes adding, in order. **Steps 1 and 2 are now built** ([Val
 2. ✅ **A commitment index**: opt-in, salted commitments per discoverable item, with rotation, rate limits and a k-anonymity threshold.
 3. ✅ **Peering**: explicit peer relationships between nodes, each with its own trust weight, rate limit and log.
 4. ✅ **The query protocol**: signed, hop-limited, TTL-bounded queries returning a path and its confidence rather than contents. Path *proofs* remain open: today an intermediary is trusted not to misreport a degree.
-5. **Introductions**: a consent-based request that each hop may refuse, ending in a shared slice or nothing.
+5. ✅ **Introductions**: an offer travels to the far end by itself, by several routes at once. Relays carry rather than gate; the far end decides; the near side then commits and only then becomes reachable. Carrying builds connection value, and not carrying is a missed opportunity rather than a fine.
 6. **Local query logs and controls**: what was asked of this node, by whom, and what it answered.
 
 Each step is useful on its own, and none of them requires a central registry.

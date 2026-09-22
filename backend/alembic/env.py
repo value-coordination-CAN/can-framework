@@ -9,6 +9,7 @@ from app.models import network_edge  # noqa: F401
 from app.value import models as value_models  # noqa: F401
 from app.value import map_models as value_map_models  # noqa: F401
 from app.value import peer_models as value_peer_models  # noqa: F401
+from app.value import introductions as value_introductions  # noqa: F401
 from app.bridge import models as bridge_models  # noqa: F401
 from app.agents import models as agent_models  # noqa: F401
 

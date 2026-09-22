@@ -72,6 +72,15 @@ value_assurance:
     peer_timeout_seconds: 3
     peer_max_queries_per_hour: 240
 
+  # Introductions (WP-012 section 5). A path says a match exists; an introduction is how
+  # the two ends actually meet, and every hop may refuse.
+  introductions:
+    ttl_hours: 72
+    max_message_chars: 500
+    max_open_per_caller: 20
+    relay_policy: auto          # relays carry offers; "review" means deciding each one by hand
+    connection_weight_gain: 0.05 # a hop that connects people is worth more next time
+
   # Node-to-node exchange. A document from a trusted node arrives as attested evidence;
   # from anyone else it is held as unverified until someone here attests to it.
   exchange:

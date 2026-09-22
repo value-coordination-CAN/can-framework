@@ -80,18 +80,26 @@ def check_peer_rate(peer: Peer) -> None:
 
 
 # The client used to call a peer. Tests replace it with an in-process one.
-def http_peer_client(peer: Peer, envelope: dict) -> dict | None:
+def http_peer_client(peer: Peer, envelope: dict, path: str = "/map/peer/query") -> dict | None:
     if not peer.base_url:
         return None
     timeout = float(discovery_rules().get("peer_timeout_seconds", 3))
     try:
-        r = httpx.post(f"{peer.base_url.rstrip('/')}/map/peer/query", json=envelope, timeout=timeout)
+        r = httpx.post(f"{peer.base_url.rstrip('/')}{path}", json=envelope, timeout=timeout)
         return r.json() if r.status_code == 200 else None
     except httpx.HTTPError:
         return None
 
 
 PEER_CLIENT = http_peer_client
+
+
+def call_peer(db: Session, node_id: str, envelope: dict, path: str) -> dict | None:
+    """Hand something to a named peer, if it is one and it is active."""
+    peer = db.query(Peer).filter(Peer.node_id == node_id, Peer.status == "active").first()
+    if peer is None:
+        return None
+    return PEER_CLIENT(peer, envelope, path)
 
 
 def log_query(db: Session, **kwargs) -> None:

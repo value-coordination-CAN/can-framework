@@ -21,6 +21,10 @@ nav:
       - WP-005: publications/wp-005-six-degree-network-ledger.md
       - WP-006: publications/wp-006-operationalising-graph-settlement.md
       - WP-007: publications/wp-007-hybrid-integration-payment-rails.md
+      - WP-008: publications/wp-008-value-discovery-knowledge-vector.md
+      - WP-009: publications/wp-009-when-growth-cannot-compensate.md
+      - WP-010: publications/wp-010-bridge-wallet-participation-funding.md
+      - WP-011: publications/wp-011-value-assurance-future-proofing.md
       
   - Policy:
       - Overview: about/POLICY_ABOUT.md

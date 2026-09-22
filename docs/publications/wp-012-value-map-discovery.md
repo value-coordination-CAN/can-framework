@@ -5,7 +5,7 @@
 **Date:** September 2026  
 **Author:** Alex Nikolov  
 **Builds on:** [WP-001](wp-001-network-value.md) (six degrees), [WP-005](wp-005-six-degree-network-ledger.md) (graph settlement), [WP-010](wp-010-bridge-wallet-participation-funding.md), [WP-011](wp-011-value-assurance-future-proofing.md)  
-**Implementation status:** steps 1 and 2 of §10 are **built** — needs and capacities, shareable map slices and opt-in commitment discovery on a single node ([Value Map API](../implementation/value-map-api.md)). Steps 3 to 6, the protocol **between** nodes in §5, are still proposed.
+**Implementation status:** steps 1 to 4 of §10 are **built** — needs and capacities, shareable map slices, opt-in commitment discovery, peering and hop-limited forwarding that returns a path and its confidence ([Value Map API](../implementation/value-map-api.md)). Steps 5 and 6, consent-based introductions and local query controls, are still proposed.
 
 ---
 
@@ -228,8 +228,8 @@ What this paper proposes adding, in order. **Steps 1 and 2 are now built** ([Val
 
 1. ✅ **Map slices**: document export extended from one asset to a chosen sub-graph, with the same hashing and redaction.
 2. ✅ **A commitment index**: opt-in, salted commitments per discoverable item, with rotation, rate limits and a k-anonymity threshold.
-3. **Peering**: explicit, mutual peer relationships between nodes, with their own rate limits and logs. *(Next: today a query is answered by the node it is asked, and goes no further.)*
-4. **The query protocol**: hop-limited, TTL-bounded queries returning path proofs rather than contents.
+3. ✅ **Peering**: explicit peer relationships between nodes, each with its own trust weight, rate limit and log.
+4. ✅ **The query protocol**: signed, hop-limited, TTL-bounded queries returning a path and its confidence rather than contents. Path *proofs* remain open: today an intermediary is trusted not to misreport a degree.
 5. **Introductions**: a consent-based request that each hop may refuse, ending in a shared slice or nothing.
 6. **Local query logs and controls**: what was asked of this node, by whom, and what it answered.
 

@@ -64,6 +64,13 @@ value_assurance:
     k_anonymity: 2            # answer only where at least this many items share a commitment
     epoch_days: 7             # the shared salt rotates on this period
     max_queries_per_hour: 120 # per caller
+    # Forwarding between peered nodes (WP-012 §5). A query travels a few hops and comes
+    # back as a path and a confidence, never as contents.
+    max_degree_default: 3
+    max_degree_limit: 6
+    hop_decay: 0.6              # confidence is discounted once per hop
+    peer_timeout_seconds: 3
+    peer_max_queries_per_hour: 240
 
   # Node-to-node exchange. A document from a trusted node arrives as attested evidence;
   # from anyone else it is held as unverified until someone here attests to it.

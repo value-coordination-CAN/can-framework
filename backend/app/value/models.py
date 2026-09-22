@@ -54,6 +54,30 @@ class AssetShare(Base):
     categories: Mapped[list] = mapped_column(JSON)  # evidence categories, plus "valuation"
 
 
+class EvidenceProposal(Base):
+    """A revaluation someone proposes: an agent or a person suggesting an input has moved.
+
+    A proposal is not evidence. It becomes evidence only when the holder or an attester
+    accepts it, which is what keeps agents from attesting to things they cannot witness.
+    """
+    __tablename__ = "va_evidence_proposals"
+    id: Mapped[str] = mapped_column(String, primary_key=True, default=_uuid)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utcnow)
+    asset_id: Mapped[str] = mapped_column(String, ForeignKey("va_assets.id"), index=True)
+    proposed_by: Mapped[str] = mapped_column(String(400))            # DID or OIDC subject
+    agent_id: Mapped[str | None] = mapped_column(String, nullable=True, index=True)
+    category: Mapped[str] = mapped_column(String(50))
+    key: Mapped[str] = mapped_column(String(100))
+    value: Mapped[float | None] = mapped_column(Float, nullable=True)
+    source_ref: Mapped[str] = mapped_column(String(500))             # where the figure came from
+    rationale: Mapped[str | None] = mapped_column(Text, nullable=True)
+    status: Mapped[str] = mapped_column(String(20), default="open")  # open|accepted|rejected
+    decided_by: Mapped[str | None] = mapped_column(String(400), nullable=True)
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    decision_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    evidence_id: Mapped[str | None] = mapped_column(String, ForeignKey("va_evidence.id"), nullable=True)
+
+
 class AssuranceRun(Base):
     """One pass of the agentic loop: detect, interpret, recalculate, explain, act."""
     __tablename__ = "va_runs"

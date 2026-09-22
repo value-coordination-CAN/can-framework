@@ -51,6 +51,18 @@ value_assurance:
         carbon_price: {mul: 2.0, add: 50}
         cap_rate: {add: 0.015}
 
+  # When value needs maintaining. These thresholds drive the work queue at GET /value/work,
+  # which is what an integrating AI system reads to know what to look at next.
+  maintenance:
+    stale_evidence_days: 180     # evidence older than this should be refreshed
+    reassess_after_days: 30      # an asset not assessed for this long is due
+    min_confidence: 0.6          # below this, attestation is needed rather than more derivation
+
+  # Node-to-node exchange. A document from a trusted node arrives as attested evidence;
+  # from anyone else it is held as unverified until someone here attests to it.
+  exchange:
+    trusted_nodes: {}   # node_id: public_key (base64url Ed25519)
+
   # Defaults for a holder's agent mandate (WP-011, section 3). Holders set their own.
   default_mandate:
     enabled: false

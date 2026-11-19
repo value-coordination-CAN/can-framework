@@ -28,6 +28,7 @@ nav:
       - WP-011: publications/wp-011-value-assurance-future-proofing.md
       - WP-012: publications/wp-012-value-map-discovery.md
       - WP-013: publications/wp-013-trusted-transaction-objects.md
+      - WP-014: publications/wp-014-the-need.md
   - Implementations:
       - Agent Integration API: implementation/agent-integration-api.md
       - Working API (value, search, exchange): implementation/agent-work-api.md

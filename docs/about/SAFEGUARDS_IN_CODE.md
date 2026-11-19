@@ -47,6 +47,21 @@ The test for any CAN deployment is **standing**: does the person affected hold t
 
 ---
 
+## Mapped to WP-014 (The Need)
+
+The foundational paper [WP-014 "The Need"](../publications/wp-014-the-need.md) sets out the principles this framework rests on. Each one is enforced by the code described above and pinned by a test in `backend/tests/test_wp014_principles.py`, so the paper is checked by CI, not only asserted in prose.
+
+| WP-014 principle | Enforced by | Pinned by test |
+| --- | --- | --- |
+| **Resolution** (§3–4) — a claim is seen granularly and checked, not taken on narrative | Every score carries its formula, per-metric means, counts and exclusions; self-reported entries are shown but excluded from priority | `test_resolution_scores_are_granular_and_checkable`, `test_resolution_self_reported_is_shown_not_counted` |
+| **Re-valuation, not remembering** (§5) — the past is revisable, never overwritten | A dispute resolved as *corrected* marks the old entry `superseded` and links the new one back to it; disputed entries keep counting until resolved | `test_revaluation_corrections_supersede_never_overwrite` |
+| **Symmetric observation** (§6) — no one-way view of another person | Scores, ledger entries, allocation requests and path searches are each bound to the caller's own profile; another person gets `403` | `test_symmetric_observation_no_one_way_view` |
+| **The subject keeps the switch** (§6) — disclosure and exit are the person's to control | Care consent is explicit and revocable (revoking deletes the data and never lowers priority); `/identity/users/me/export` returns everything held about them; account deletion refuses without explicit confirmation | `test_subject_keeps_the_switch` |
+
+The **value-vs-soul boundary** (§8) is a scope rule rather than a code path: the backend records and allocates value only, and holds nothing about the worth of a person. It is kept by what the schema deliberately does not contain.
+
+---
+
 ## Open items before any live pilot
 
 - Attester accreditation: which attesters may record which metrics.
